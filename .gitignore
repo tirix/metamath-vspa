@@ -1,0 +1,9 @@
+.vscode
+metamath-lsp/target
+metamath-lsp/Cargo.lock
+metamath-lsp/*.rs.bk
+metamath-vscode/out
+metamath-vscode/dist
+metamath-vscode/node_modules
+metamath-vscode/.vscode-test/
+metamath-vscode/*.vsix

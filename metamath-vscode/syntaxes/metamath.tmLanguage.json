@@ -1,0 +1,26 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Metamath",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#comments"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.metamath",
+				"match": "\\$(a|c|e|f|p|v|\\.|{|}|=)"
+			}]
+		},
+		"comments": {
+			"name": "comment.line.metamath",
+			"begin": "\\$\\(",
+			"end": "\\$\\)"
+		}
+	},
+	"scopeName": "text.metamath"
+}
