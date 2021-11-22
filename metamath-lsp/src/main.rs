@@ -1,8 +1,15 @@
+mod util;
+
 use log::*;
 use clap::{Arg,App};
 use std::error::Error;
+use serde::ser::Serialize;
+use std::sync::atomic::AtomicBool;
 use serde_json::{from_value, to_value};
+use std::sync::Arc;
 use crossbeam::channel::{SendError, RecvError};
+use crate::util::FileRef;
+//use crate::util::{ArcList, ArcString, BoxError, FileRef, FileSpan, Span, MutexExt, CondvarExt};
 use lsp_types::*;
 use lsp_server::{Connection, ErrorCode, Message, Notification, ProtocolError,
     Request, RequestId, Response, ResponseError};
@@ -68,6 +75,33 @@ fn parse_request(Request {id, method, params}: Request) -> Result<Option<(Reques
     })
 }
 
+fn hover(path: FileRef, pos: Position) -> Result<Option<Hover>, ResponseError> {
+    let string = MarkedString::String("Aloha".into());
+    Ok(Some(Hover {
+        range: None, //Some(text.to_range(out[0].0)),
+        contents: HoverContents::Scalar(string),
+    }))
+}
+
+struct RequestHandler {
+    id: RequestId,
+    //cancel: Arc<AtomicBool>,
+}
+
+impl RequestHandler {
+    fn response_err(code: ErrorCode, message: impl Into<String>) -> ResponseError {
+        ResponseError {code: code as i32, message: message.into(), data: None}
+    }
+ 
+    fn handle(self, req: RequestType) -> Result<impl Serialize, ResponseError> {
+        match req {
+            RequestType::Hover(TextDocumentPositionParams {text_document: doc, position}) =>
+                hover(doc.uri.into(), position),
+            _ => Err(RequestHandler::response_err(ErrorCode::MethodNotFound, "Not implemented")),
+        }
+    }
+}
+
 struct Server {
     conn: Connection,
 }
@@ -110,7 +144,7 @@ impl Server {
         })
     }
     
-        fn send_config_request(&self) -> Result<()> {
+    fn send_config_request(&self) -> Result<()> {
         use lsp_types::request::{WorkspaceConfiguration, Request};
         let params = lsp_types::ConfigurationParams {
             items: vec![lsp_types::ConfigurationItem {
@@ -145,6 +179,9 @@ impl Server {
                         }
                         if let Some((id, req)) = parse_request(req)? {
                             info!("Got request: {:?}", req);
+                            let handler = RequestHandler { id: id.clone() };
+                            let resp = handler.handle(req);
+                            self.response(id, resp)?;
                             // Job::RequestHandler(id, Some(Box::new(req))).spawn();
                         }
                     }
@@ -176,6 +213,14 @@ impl Server {
             Err(e) => error!("Server panicked: {:?}", e)
             }
         }
+    }
+
+    fn response<T: Serialize>(&self, id: RequestId, resp: Result<T, ResponseError>) -> Result<()> {
+        self.conn.sender.send(Message::Response(match resp {
+            Ok(val) => Response { id, result: Some(to_value(val)?), error: None },
+            Err(e) => Response { id, result: None, error: Some(e) }
+        }))?;
+        Ok(())
     }
 }
 
