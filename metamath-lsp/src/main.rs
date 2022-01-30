@@ -1,6 +1,7 @@
 mod util;
 
 use log::*;
+use std::str::FromStr;
 use clap::{Arg,App};
 use std::error::Error;
 use serde::ser::Serialize;
@@ -13,6 +14,7 @@ use crate::util::FileRef;
 use lsp_types::*;
 use lsp_server::{Connection, ErrorCode, Message, Notification, ProtocolError,
     Request, RequestId, Response, ResponseError};
+use metamath_knife::{Database, database::DbOptions};
 
 /// Newtype for `Box<dyn Error + Send + Sync>`
 pub type BoxError = Box<dyn Error + Send + Sync>;
@@ -103,13 +105,15 @@ impl RequestHandler {
 }
 
 struct Server {
+    db: Database,
     conn: Connection,
 }
 
 impl Server {
-    fn new() -> Self {
+    fn new(db: Database) -> Self {
         let (conn, _iot) = Connection::stdio();
         Server {
+            db,
             conn,
         }
     }
@@ -144,6 +148,13 @@ impl Server {
         })
     }
     
+    fn send_diagnostics(&self, uri: Url, version: Option<i32>, diagnostics: Vec<Diagnostic>) -> Result<()> {
+        self.send_message(Notification {
+            method: "textDocument/publishDiagnostics".to_owned(),
+            params: to_value(PublishDiagnosticsParams {uri, diagnostics, version})?
+        })
+    }
+      
     fn send_config_request(&self) -> Result<()> {
         use lsp_types::request::{WorkspaceConfiguration, Request};
         let params = lsp_types::ConfigurationParams {
@@ -225,6 +236,10 @@ impl Server {
 }
 
 
+fn positive_integer(val: String) -> Result<(), String> {
+    u32::from_str(&val).map(|_| ()).map_err(|e| format!("{}", e))
+}
+
 /// Main entry point for the Metamath language server.
 ///
 /// This function sets up an [LSP] connection using stdin and stdout. 
@@ -247,7 +262,18 @@ pub fn main() {
         .arg(Arg::with_name("debug")
             .short("d")
             .long("debug")
-            .help("Sets the level of verbosity")).get_matches();
+            .help("Sets the level of verbosity"))
+        .arg(Arg::with_name("database")
+            .help("Sets the main metamath file to use")
+            .required(true)
+            .index(1))
+        .arg(Arg::with_name("jobs")
+            .help("Number of threads to use for startup parsing")
+            .long("jobs")
+            .short("j")
+            .takes_value(true)
+            .validator(positive_integer))
+        .get_matches();
     if matches.is_present("debug") || true {
         use {simplelog::{Config, LevelFilter, WriteLogger}, std::fs::File};
         std::env::set_var("RUST_BACKTRACE", "1");
@@ -255,7 +281,19 @@ pub fn main() {
             let _ = WriteLogger::init(LevelFilter::Debug, Config::default(), f);
         }
     }
-    let server = Server::new(); 
+    let db_file_name = matches.value_of("database").unwrap_or("None");
+    let job_count = usize::from_str(matches.value_of("jobs").unwrap_or("1")).expect("validator should check this");
+    info!("Parsing database {}", db_file_name);
+    let options = DbOptions {
+        incremental: true,
+        autosplit: false,
+        jobs: job_count,
+        ..Default::default()
+    };
+    let mut db = Database::new(options);
+    db.parse(db_file_name.into(), Vec::new());
+
+    let server = Server::new(db); 
     info!("Starting server");
     if let Err(e) = server.start() {
         error!("Error when starting server: {:?}", e);

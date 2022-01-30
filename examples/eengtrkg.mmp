@@ -1,0 +1,293 @@
+$( <MM> <PROOF_ASST> THEOREM=eengtrkg  LOC_AFTER=?
+
+* The geometry structure for ` EE ^ N ` is a Tarski geometry (Contributed
+  by Thierry Arnoux, 15-Mar-2019.)
+
+10::fvex           |- ( EEG ` N ) e. _V
+20:10:a1i          |- ( N e. NN -> ( EEG ` N ) e. _V )
+30::simpl          |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> N e. NN )
+40::simprl         |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( Base ` ( EEG ` N ) ) )
+50::eengbas        |- ( N e. NN -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+60:50:adantr       |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+70:40,60:eleqtrrd  |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( EE ` N ) )
+80::simprr         |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( Base ` ( EEG ` N ) ) )
+90:60,80:eleqtrrd  |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( EE ` N ) )
+100::axcgrrflx     |- ( ( N e. NN /\ x e. ( EE ` N ) /\ y e. ( EE ` N ) ) -> <. x , y >. Cgr <. y , x >. )
+110:100,30,90,70:syl3anc 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> <. x , y >. Cgr <. y , x >. )
+120::eqid          |- ( Base ` ( EEG ` N ) ) = ( Base ` ( EEG ` N ) )
+130::eqid          |- ( dist ` ( EEG ` N ) ) = ( dist ` ( EEG ` N ) )
+140:30,40,120,130,80,40,80:ecgrtg 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> ( <. x , y >. Cgr <. y , x >. <-> ( x ( dist ` ( EEG ` N ) ) y ) = ( y ( dist ` ( EEG ` N ) ) x ) ) )
+150:110,140:mpbid  |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> ( x ( dist ` ( EEG ` N ) ) y ) = ( y ( dist ` ( EEG ` N ) ) x ) )
+160:150:ralrimivva |- ( N e. NN -> A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) ( x ( dist ` ( EEG ` N ) ) y ) = ( y ( dist ` ( EEG ` N ) ) x ) )
+170::simpl         |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> N e. NN )
+180::simpr1        |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( Base ` ( EEG ` N ) ) )
+190::simpr2        |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( Base ` ( EEG ` N ) ) )
+200::simpr3        |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> z e. ( Base ` ( EEG ` N ) ) )
+210:170,200,190,200,120,180,130:ecgrtg 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> ( <. x , y >. Cgr <. z , z >. <-> ( x ( dist ` ( EEG ` N ) ) y ) = ( z ( dist ` ( EEG ` N ) ) z ) ) )
+220:70:3adantr3    |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( EE ` N ) )
+230:90:3adantr3    |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( EE ` N ) )
+240:50:adantr      |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+250:200,240:eleqtrrd 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> z e. ( EE ` N ) )
+260::axcgrid       |- ( ( N e. NN /\ ( x e. ( EE ` N ) /\ y e. ( EE ` N ) /\ z e. ( EE ` N ) ) ) -> ( <. x , y >. Cgr <. z , z >. -> x = y ) )
+270:250,170,220,260,230:syl13anc 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> ( <. x , y >. Cgr <. z , z >. -> x = y ) )
+280:270,210:sylbird 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) /\ z e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( x ( dist ` ( EEG ` N ) ) y ) = ( z ( dist ` ( EEG ` N ) ) z ) -> x = y ) )
+290:280:ralrimivvva 
+                   |- ( N e. NN -> A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) ( ( x ( dist ` ( EEG ` N ) ) y ) = ( z ( dist ` ( EEG ` N ) ) z ) -> x = y ) )
+300:20,160,290:jca32 
+                   |- ( N e. NN -> ( ( EEG ` N ) e. _V /\ ( A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) ( x ( dist ` ( EEG ` N ) ) y ) = ( y ( dist ` ( EEG ` N ) ) x ) /\ A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) ( ( x ( dist ` ( EEG ` N ) ) y ) = ( z ( dist ` ( EEG ` N ) ) z ) -> x = y ) ) ) )
+310::eqid          |- ( Itv ` ( EEG ` N ) ) = ( Itv ` ( EEG ` N ) )
+320:310,120,130:istrkgc 
+                   |- ( ( EEG ` N ) e. TarskiGC <-> ( ( EEG ` N ) e. _V /\ ( A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) ( x ( dist ` ( EEG ` N ) ) y ) = ( y ( dist ` ( EEG ` N ) ) x ) /\ A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) ( ( x ( dist ` ( EEG ` N ) ) y ) = ( z ( dist ` ( EEG ` N ) ) z ) -> x = y ) ) ) )
+330:320,300:sylibr |- ( N e. NN -> ( EEG ` N ) e. TarskiGC )
+340:120,40,310,30,40,80:ebtwntg 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> ( y Btwn <. x , x >. <-> y e. ( x ( Itv ` ( EEG ` N ) ) x ) ) )
+350::axbtwnid      |- ( ( N e. NN /\ y e. ( EE ` N ) /\ x e. ( EE ` N ) ) -> ( y Btwn <. x , x >. -> y = x ) )
+360:30,350,90,70:syl3anc 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> ( y Btwn <. x , x >. -> y = x ) )
+370:360,340:sylbird 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> ( y e. ( x ( Itv ` ( EEG ` N ) ) x ) -> y = x ) )
+380:370:imp        |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ y e. ( x ( Itv ` ( EEG ` N ) ) x ) ) -> y = x )
+390:380:eqcomd     |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ y e. ( x ( Itv ` ( EEG ` N ) ) x ) ) -> x = y )
+400:390:ex         |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> ( y e. ( x ( Itv ` ( EEG ` N ) ) x ) -> x = y ) )
+410:400:ralrimivva |- ( N e. NN -> A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) x ) -> x = y ) )
+420::simpll        |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> N e. NN )
+430:70:adantr      |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( EE ` N ) )
+440:90:adantr      |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( EE ` N ) )
+450:40:adantr      |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( Base ` ( EEG ` N ) ) )
+460:80:adantr      |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( Base ` ( EEG ` N ) ) )
+470::simpr1        |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> z e. ( Base ` ( EEG ` N ) ) )
+480:250,450,470,420,460:syl13anc 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> z e. ( EE ` N ) )
+490::simpr2        |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> u e. ( Base ` ( EEG ` N ) ) )
+500:420,50:syl     |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+510:500,490:eleqtrrd 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> u e. ( EE ` N ) )
+520::simpr3        |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> v e. ( Base ` ( EEG ` N ) ) )
+530:500,520:eleqtrrd 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> v e. ( EE ` N ) )
+540::axpasch       |- ( ( N e. NN /\ ( x e. ( EE ` N ) /\ y e. ( EE ` N ) /\ z e. ( EE ` N ) ) /\ ( u e. ( EE ` N ) /\ v e. ( EE ` N ) ) ) -> ( ( u Btwn <. x , z >. /\ v Btwn <. y , z >. ) -> E. a e. ( EE ` N ) ( a Btwn <. u , y >. /\ a Btwn <. v , x >. ) ) )
+550:540,480,510,420,530,430,440:syl132anc 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( u Btwn <. x , z >. /\ v Btwn <. y , z >. ) -> E. a e. ( EE ` N ) ( a Btwn <. u , y >. /\ a Btwn <. v , x >. ) ) )
+560:420,470,310,450,490,120:ebtwntg 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( u Btwn <. x , z >. <-> u e. ( x ( Itv ` ( EEG ` N ) ) z ) ) )
+570:420,470,310,120,520,460:ebtwntg 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( v Btwn <. y , z >. <-> v e. ( y ( Itv ` ( EEG ` N ) ) z ) ) )
+580:560,570:anbi12d 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( u Btwn <. x , z >. /\ v Btwn <. y , z >. ) <-> ( u e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ v e. ( y ( Itv ` ( EEG ` N ) ) z ) ) ) )
+590::simplll       |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> N e. NN )
+600:490:adantr     |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> u e. ( Base ` ( EEG ` N ) ) )
+610:460:adantr     |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> y e. ( Base ` ( EEG ` N ) ) )
+620::simpr         |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> a e. ( EE ` N ) )
+630:500:adantr     |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+640:630,620:eleqtrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> a e. ( Base ` ( EEG ` N ) ) )
+650:310,610,120,640,590,600:ebtwntg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> ( a Btwn <. u , y >. <-> a e. ( u ( Itv ` ( EEG ` N ) ) y ) ) )
+660:520:adantr     |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> v e. ( Base ` ( EEG ` N ) ) )
+670:450:adantr     |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> x e. ( Base ` ( EEG ` N ) ) )
+680:660,670,120,590,640,310:ebtwntg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> ( a Btwn <. v , x >. <-> a e. ( v ( Itv ` ( EEG ` N ) ) x ) ) )
+690:680,650:anbi12d 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> ( ( a Btwn <. u , y >. /\ a Btwn <. v , x >. ) <-> ( a e. ( u ( Itv ` ( EEG ` N ) ) y ) /\ a e. ( v ( Itv ` ( EEG ` N ) ) x ) ) ) )
+700:500,690:rexeqbidva 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( E. a e. ( EE ` N ) ( a Btwn <. u , y >. /\ a Btwn <. v , x >. ) <-> E. a e. ( Base ` ( EEG ` N ) ) ( a e. ( u ( Itv ` ( EEG ` N ) ) y ) /\ a e. ( v ( Itv ` ( EEG ` N ) ) x ) ) ) )
+710:700,550,580:3imtr3d 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( u e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ v e. ( y ( Itv ` ( EEG ` N ) ) z ) ) -> E. a e. ( Base ` ( EEG ` N ) ) ( a e. ( u ( Itv ` ( EEG ` N ) ) y ) /\ a e. ( v ( Itv ` ( EEG ` N ) ) x ) ) ) )
+720:710:ralrimivvva 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> A. z e. ( Base ` ( EEG ` N ) ) A. u e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( u e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ v e. ( y ( Itv ` ( EEG ` N ) ) z ) ) -> E. a e. ( Base ` ( EEG ` N ) ) ( a e. ( u ( Itv ` ( EEG ` N ) ) y ) /\ a e. ( v ( Itv ` ( EEG ` N ) ) x ) ) ) )
+730:720:ralrimivva |- ( N e. NN -> A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) A. u e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( u e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ v e. ( y ( Itv ` ( EEG ` N ) ) z ) ) -> E. a e. ( Base ` ( EEG ` N ) ) ( a e. ( u ( Itv ` ( EEG ` N ) ) y ) /\ a e. ( v ( Itv ` ( EEG ` N ) ) x ) ) ) )
+740::simpl         |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> N e. NN )
+750::elpwi         |- ( s e. ~P ( Base ` ( EEG ` N ) ) -> s C_ ( Base ` ( EEG ` N ) ) )
+760:750:ad2antrl   |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> s C_ ( Base ` ( EEG ` N ) ) )
+770:50:adantr      |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+780:760,770:sseqtr4d 
+                   |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> s C_ ( EE ` N ) )
+790::elpwi         |- ( t e. ~P ( Base ` ( EEG ` N ) ) -> t C_ ( Base ` ( EEG ` N ) ) )
+800:790:ad2antll   |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> t C_ ( Base ` ( EEG ` N ) ) )
+810:800,770:sseqtr4d 
+                   |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> t C_ ( EE ` N ) )
+820::simpll        |- ( ( ( N e. NN /\ ( s C_ ( EE ` N ) /\ t C_ ( EE ` N ) ) ) /\ E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. ) -> N e. NN )
+830::simplrl       |- ( ( ( N e. NN /\ ( s C_ ( EE ` N ) /\ t C_ ( EE ` N ) ) ) /\ E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. ) -> s C_ ( EE ` N ) )
+840::simplrr       |- ( ( ( N e. NN /\ ( s C_ ( EE ` N ) /\ t C_ ( EE ` N ) ) ) /\ E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. ) -> t C_ ( EE ` N ) )
+850::simpr         |- ( ( ( N e. NN /\ ( s C_ ( EE ` N ) /\ t C_ ( EE ` N ) ) ) /\ E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. ) -> E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. )
+860::axcont        |- ( ( N e. NN /\ ( s C_ ( EE ` N ) /\ t C_ ( EE ` N ) /\ E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. ) ) -> E. b e. ( EE ` N ) A. x e. s A. y e. t b Btwn <. x , y >. )
+870:820,830,860,840,850:syl13anc 
+                   |- ( ( ( N e. NN /\ ( s C_ ( EE ` N ) /\ t C_ ( EE ` N ) ) ) /\ E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. ) -> E. b e. ( EE ` N ) A. x e. s A. y e. t b Btwn <. x , y >. )
+880:870:ex         |- ( ( N e. NN /\ ( s C_ ( EE ` N ) /\ t C_ ( EE ` N ) ) ) -> ( E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. -> E. b e. ( EE ` N ) A. x e. s A. y e. t b Btwn <. x , y >. ) )
+890:780,740,810,880:syl12anc 
+                   |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> ( E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. -> E. b e. ( EE ` N ) A. x e. s A. y e. t b Btwn <. x , y >. ) )
+900::simplll       |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> N e. NN )
+910::simplr        |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> a e. ( EE ` N ) )
+920:770:ad2antrr   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+930:920,910:eleqtrd 
+                   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> a e. ( Base ` ( EEG ` N ) ) )
+940:800:ad2antrr   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> t C_ ( Base ` ( EEG ` N ) ) )
+950::simprr        |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> y e. t )
+960:940,950:sseldd |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> y e. ( Base ` ( EEG ` N ) ) )
+970:760:ad2antrr   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> s C_ ( Base ` ( EEG ` N ) ) )
+980::simprl        |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> x e. s )
+990:970,980:sseldd |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> x e. ( Base ` ( EEG ` N ) ) )
+1000:990,120,900,310,960,930:ebtwntg 
+                   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> ( x Btwn <. a , y >. <-> x e. ( a ( Itv ` ( EEG ` N ) ) y ) ) )
+1010:1000:2ralbidva 
+                   |- ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ a e. ( EE ` N ) ) -> ( A. x e. s A. y e. t x Btwn <. a , y >. <-> A. x e. s A. y e. t x e. ( a ( Itv ` ( EEG ` N ) ) y ) ) )
+1020:770,1010:rexeqbidva 
+                   |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> ( E. a e. ( EE ` N ) A. x e. s A. y e. t x Btwn <. a , y >. <-> E. a e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t x e. ( a ( Itv ` ( EEG ` N ) ) y ) ) )
+1030::simplll      |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> N e. NN )
+1040:760:ad2antrr  |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> s C_ ( Base ` ( EEG ` N ) ) )
+1050::simprl       |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> x e. s )
+1060:1040,1050:sseldd 
+                   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> x e. ( Base ` ( EEG ` N ) ) )
+1070:800:ad2antrr  |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> t C_ ( Base ` ( EEG ` N ) ) )
+1080::simprr       |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> y e. t )
+1090:1070,1080:sseldd 
+                   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> y e. ( Base ` ( EEG ` N ) ) )
+1100::simplr       |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> b e. ( EE ` N ) )
+1110:770:ad2antrr  |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+1120:1100,1110:eleqtrd 
+                   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> b e. ( Base ` ( EEG ` N ) ) )
+1130:1030,1090,120,310,1060,1120:ebtwntg 
+                   |- ( ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) /\ ( x e. s /\ y e. t ) ) -> ( b Btwn <. x , y >. <-> b e. ( x ( Itv ` ( EEG ` N ) ) y ) ) )
+1140:1130:2ralbidva 
+                   |- ( ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) /\ b e. ( EE ` N ) ) -> ( A. x e. s A. y e. t b Btwn <. x , y >. <-> A. x e. s A. y e. t b e. ( x ( Itv ` ( EEG ` N ) ) y ) ) )
+1150:1140,770:rexeqbidva 
+                   |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> ( E. b e. ( EE ` N ) A. x e. s A. y e. t b Btwn <. x , y >. <-> E. b e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t b e. ( x ( Itv ` ( EEG ` N ) ) y ) ) )
+1160:890,1020,1150:3imtr3d 
+                   |- ( ( N e. NN /\ ( s e. ~P ( Base ` ( EEG ` N ) ) /\ t e. ~P ( Base ` ( EEG ` N ) ) ) ) -> ( E. a e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t x e. ( a ( Itv ` ( EEG ` N ) ) y ) -> E. b e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t b e. ( x ( Itv ` ( EEG ` N ) ) y ) ) )
+1170:1160:ralrimivva 
+                   |- ( N e. NN -> A. s e. ~P ( Base ` ( EEG ` N ) ) A. t e. ~P ( Base ` ( EEG ` N ) ) ( E. a e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t x e. ( a ( Itv ` ( EEG ` N ) ) y ) -> E. b e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t b e. ( x ( Itv ` ( EEG ` N ) ) y ) ) )
+1180:1170,410,730:3jca 
+                   |- ( N e. NN -> ( A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) x ) -> x = y ) /\ A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) A. u e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( u e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ v e. ( y ( Itv ` ( EEG ` N ) ) z ) ) -> E. a e. ( Base ` ( EEG ` N ) ) ( a e. ( u ( Itv ` ( EEG ` N ) ) y ) /\ a e. ( v ( Itv ` ( EEG ` N ) ) x ) ) ) /\ A. s e. ~P ( Base ` ( EEG ` N ) ) A. t e. ~P ( Base ` ( EEG ` N ) ) ( E. a e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t x e. ( a ( Itv ` ( EEG ` N ) ) y ) -> E. b e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t b e. ( x ( Itv ` ( EEG ` N ) ) y ) ) ) )
+1190:120,130,310:istrkgb 
+                   |- ( ( EEG ` N ) e. TarskiGB <-> ( ( EEG ` N ) e. _V /\ ( A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) x ) -> x = y ) /\ A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) A. u e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( u e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ v e. ( y ( Itv ` ( EEG ` N ) ) z ) ) -> E. a e. ( Base ` ( EEG ` N ) ) ( a e. ( u ( Itv ` ( EEG ` N ) ) y ) /\ a e. ( v ( Itv ` ( EEG ` N ) ) x ) ) ) /\ A. s e. ~P ( Base ` ( EEG ` N ) ) A. t e. ~P ( Base ` ( EEG ` N ) ) ( E. a e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t x e. ( a ( Itv ` ( EEG ` N ) ) y ) -> E. b e. ( Base ` ( EEG ` N ) ) A. x e. s A. y e. t b e. ( x ( Itv ` ( EEG ` N ) ) y ) ) ) ) )
+1200:20,1180,1190:sylanbrc 
+                   |- ( N e. NN -> ( EEG ` N ) e. TarskiGB )
+1210:1200,330:elind 
+                   |- ( N e. NN -> ( EEG ` N ) e. ( TarskiGC i^i TarskiGB ) )
+1220::simplll      |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> N e. NN )
+1230:40:ad2antrr   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( Base ` ( EEG ` N ) ) )
+1240:50,1220:syl   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+1250:1230,1240:eleqtrrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( EE ` N ) )
+1260:80:ad2antrr   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( Base ` ( EEG ` N ) ) )
+1270:1260,1240:eleqtrrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( EE ` N ) )
+1280::simplr1      |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> z e. ( Base ` ( EEG ` N ) ) )
+1290:1240,1280:eleqtrrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> z e. ( EE ` N ) )
+1300::simplr2      |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> u e. ( Base ` ( EEG ` N ) ) )
+1310:1300,1240:eleqtrrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> u e. ( EE ` N ) )
+1320::simplr3      |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> a e. ( Base ` ( EEG ` N ) ) )
+1330:1240,1320:eleqtrrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> a e. ( EE ` N ) )
+1340::simpr1       |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> b e. ( Base ` ( EEG ` N ) ) )
+1350:1240,1340:eleqtrrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> b e. ( EE ` N ) )
+1360::simpr2       |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> c e. ( Base ` ( EEG ` N ) ) )
+1370:1240,1360:eleqtrrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> c e. ( EE ` N ) )
+1380::simpr3       |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> v e. ( Base ` ( EEG ` N ) ) )
+1390:1380,1240:eleqtrrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> v e. ( EE ` N ) )
+1400::3anass       |- ( ( ( x =/= y /\ y Btwn <. x , z >. /\ b Btwn <. a , c >. ) /\ ( <. x , y >. Cgr <. a , b >. /\ <. y , z >. Cgr <. b , c >. ) /\ ( <. x , u >. Cgr <. a , v >. /\ <. y , u >. Cgr <. b , v >. ) ) <-> ( ( x =/= y /\ y Btwn <. x , z >. /\ b Btwn <. a , c >. ) /\ ( ( <. x , y >. Cgr <. a , b >. /\ <. y , z >. Cgr <. b , c >. ) /\ ( <. x , u >. Cgr <. a , v >. /\ <. y , u >. Cgr <. b , v >. ) ) ) )
+1410::ax5seg       |- ( ( ( N e. NN /\ x e. ( EE ` N ) /\ y e. ( EE ` N ) ) /\ ( z e. ( EE ` N ) /\ u e. ( EE ` N ) /\ a e. ( EE ` N ) ) /\ ( b e. ( EE ` N ) /\ c e. ( EE ` N ) /\ v e. ( EE ` N ) ) ) -> ( ( ( x =/= y /\ y Btwn <. x , z >. /\ b Btwn <. a , c >. ) /\ ( <. x , y >. Cgr <. a , b >. /\ <. y , z >. Cgr <. b , c >. ) /\ ( <. x , u >. Cgr <. a , v >. /\ <. y , u >. Cgr <. b , v >. ) ) -> <. z , u >. Cgr <. c , v >. ) )
+1420:1410,1400:syl5bir 
+                   |- ( ( ( N e. NN /\ x e. ( EE ` N ) /\ y e. ( EE ` N ) ) /\ ( z e. ( EE ` N ) /\ u e. ( EE ` N ) /\ a e. ( EE ` N ) ) /\ ( b e. ( EE ` N ) /\ c e. ( EE ` N ) /\ v e. ( EE ` N ) ) ) -> ( ( ( x =/= y /\ y Btwn <. x , z >. /\ b Btwn <. a , c >. ) /\ ( ( <. x , y >. Cgr <. a , b >. /\ <. y , z >. Cgr <. b , c >. ) /\ ( <. x , u >. Cgr <. a , v >. /\ <. y , u >. Cgr <. b , v >. ) ) ) -> <. z , u >. Cgr <. c , v >. ) )
+1430:1370,1330,1390,1220,1270,1250,1310,1350,1420,1290:syl333anc 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( ( x =/= y /\ y Btwn <. x , z >. /\ b Btwn <. a , c >. ) /\ ( ( <. x , y >. Cgr <. a , b >. /\ <. y , z >. Cgr <. b , c >. ) /\ ( <. x , u >. Cgr <. a , v >. /\ <. y , u >. Cgr <. b , v >. ) ) ) -> <. z , u >. Cgr <. c , v >. ) )
+1440:1280,1230,1260,310,120,1220:ebtwntg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( y Btwn <. x , z >. <-> y e. ( x ( Itv ` ( EEG ` N ) ) z ) ) )
+1450:310,1340,1220,1320,1360,120:ebtwntg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( b Btwn <. a , c >. <-> b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) )
+1460:1440,1450:3anbi23d 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( x =/= y /\ y Btwn <. x , z >. /\ b Btwn <. a , c >. ) <-> ( x =/= y /\ y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) ) )
+1470:1340,1220,1320,120,130,1260,1230:ecgrtg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( <. x , y >. Cgr <. a , b >. <-> ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) ) )
+1480:130,1220,1360,1260,1340,120,1280:ecgrtg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( <. y , z >. Cgr <. b , c >. <-> ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) )
+1490:1480,1470:anbi12d 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( <. x , y >. Cgr <. a , b >. /\ <. y , z >. Cgr <. b , c >. ) <-> ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) ) )
+1500:1320,130,120,1230,1220,1380,1300:ecgrtg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( <. x , u >. Cgr <. a , v >. <-> ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) ) )
+1510:120,1380,1300,1220,130,1260,1340:ecgrtg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( <. y , u >. Cgr <. b , v >. <-> ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) )
+1520:1510,1500:anbi12d 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( <. x , u >. Cgr <. a , v >. /\ <. y , u >. Cgr <. b , v >. ) <-> ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) )
+1530:1490,1520:anbi12d 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( ( <. x , y >. Cgr <. a , b >. /\ <. y , z >. Cgr <. b , c >. ) /\ ( <. x , u >. Cgr <. a , v >. /\ <. y , u >. Cgr <. b , v >. ) ) <-> ( ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) /\ ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) ) )
+1540:1460,1530:anbi12d 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( ( x =/= y /\ y Btwn <. x , z >. /\ b Btwn <. a , c >. ) /\ ( ( <. x , y >. Cgr <. a , b >. /\ <. y , z >. Cgr <. b , c >. ) /\ ( <. x , u >. Cgr <. a , v >. /\ <. y , u >. Cgr <. b , v >. ) ) ) <-> ( ( x =/= y /\ y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) /\ ( ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) /\ ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) ) ) )
+1550:1280,1220,1360,1300,130,120,1380:ecgrtg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( <. z , u >. Cgr <. c , v >. <-> ( z ( dist ` ( EEG ` N ) ) u ) = ( c ( dist ` ( EEG ` N ) ) v ) ) )
+1560:1430,1550,1540:3imtr3d 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) /\ ( b e. ( Base ` ( EEG ` N ) ) /\ c e. ( Base ` ( EEG ` N ) ) /\ v e. ( Base ` ( EEG ` N ) ) ) ) -> ( ( ( x =/= y /\ y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) /\ ( ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) /\ ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) ) -> ( z ( dist ` ( EEG ` N ) ) u ) = ( c ( dist ` ( EEG ` N ) ) v ) ) )
+1570:1560:ralrimivvva 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( z e. ( Base ` ( EEG ` N ) ) /\ u e. ( Base ` ( EEG ` N ) ) /\ a e. ( Base ` ( EEG ` N ) ) ) ) -> A. b e. ( Base ` ( EEG ` N ) ) A. c e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( ( x =/= y /\ y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) /\ ( ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) /\ ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) ) -> ( z ( dist ` ( EEG ` N ) ) u ) = ( c ( dist ` ( EEG ` N ) ) v ) ) )
+1580:1570:ralrimivvva 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> A. z e. ( Base ` ( EEG ` N ) ) A. u e. ( Base ` ( EEG ` N ) ) A. a e. ( Base ` ( EEG ` N ) ) A. b e. ( Base ` ( EEG ` N ) ) A. c e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( ( x =/= y /\ y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) /\ ( ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) /\ ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) ) -> ( z ( dist ` ( EEG ` N ) ) u ) = ( c ( dist ` ( EEG ` N ) ) v ) ) )
+1590:1580:ralrimivva 
+                   |- ( N e. NN -> A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) A. u e. ( Base ` ( EEG ` N ) ) A. a e. ( Base ` ( EEG ` N ) ) A. b e. ( Base ` ( EEG ` N ) ) A. c e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( ( x =/= y /\ y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) /\ ( ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) /\ ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) ) -> ( z ( dist ` ( EEG ` N ) ) u ) = ( c ( dist ` ( EEG ` N ) ) v ) ) )
+1600::simpll       |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> N e. NN )
+1610:70:adantr     |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> x e. ( EE ` N ) )
+1620:90:adantr     |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> y e. ( EE ` N ) )
+1630::simprl       |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> a e. ( Base ` ( EEG ` N ) ) )
+1640:1600,50:syl   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+1650:1630,1640:eleqtrrd 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> a e. ( EE ` N ) )
+1660::simprr       |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> b e. ( Base ` ( EEG ` N ) ) )
+1670:1640,1660:eleqtrrd 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> b e. ( EE ` N ) )
+1680::axsegcon     |- ( ( N e. NN /\ ( x e. ( EE ` N ) /\ y e. ( EE ` N ) ) /\ ( a e. ( EE ` N ) /\ b e. ( EE ` N ) ) ) -> E. z e. ( EE ` N ) ( y Btwn <. x , z >. /\ <. y , z >. Cgr <. a , b >. ) )
+1690:1680,1670,1620,1600,1610,1650:syl122anc 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> E. z e. ( EE ` N ) ( y Btwn <. x , z >. /\ <. y , z >. Cgr <. a , b >. ) )
+1700::simplll      |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> N e. NN )
+1710:40:ad2antrr   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> x e. ( Base ` ( EEG ` N ) ) )
+1720::simpr        |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> z e. ( EE ` N ) )
+1730:1640:adantr   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> ( EE ` N ) = ( Base ` ( EEG ` N ) ) )
+1740:1730,1720:eleqtrd 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> z e. ( Base ` ( EEG ` N ) ) )
+1750:80:ad2antrr   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> y e. ( Base ` ( EEG ` N ) ) )
+1760:1750,1740,120,1710,1700,310:ebtwntg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> ( y Btwn <. x , z >. <-> y e. ( x ( Itv ` ( EEG ` N ) ) z ) ) )
+1770::simplrl      |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> a e. ( Base ` ( EEG ` N ) ) )
+1780::simplrr      |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> b e. ( Base ` ( EEG ` N ) ) )
+1790:120,1770,130,1750,1740,1780,1700:ecgrtg 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> ( <. y , z >. Cgr <. a , b >. <-> ( y ( dist ` ( EEG ` N ) ) z ) = ( a ( dist ` ( EEG ` N ) ) b ) ) )
+1800:1760,1790:anbi12d 
+                   |- ( ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) /\ z e. ( EE ` N ) ) -> ( ( y Btwn <. x , z >. /\ <. y , z >. Cgr <. a , b >. ) <-> ( y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( a ( dist ` ( EEG ` N ) ) b ) ) ) )
+1810:1800,1640:rexeqbidva 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> ( E. z e. ( EE ` N ) ( y Btwn <. x , z >. /\ <. y , z >. Cgr <. a , b >. ) <-> E. z e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( a ( dist ` ( EEG ` N ) ) b ) ) ) )
+1820:1690,1810:mpbid 
+                   |- ( ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) /\ ( a e. ( Base ` ( EEG ` N ) ) /\ b e. ( Base ` ( EEG ` N ) ) ) ) -> E. z e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( a ( dist ` ( EEG ` N ) ) b ) ) )
+1830:1820:ralrimivva 
+                   |- ( ( N e. NN /\ ( x e. ( Base ` ( EEG ` N ) ) /\ y e. ( Base ` ( EEG ` N ) ) ) ) -> A. a e. ( Base ` ( EEG ` N ) ) A. b e. ( Base ` ( EEG ` N ) ) E. z e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( a ( dist ` ( EEG ` N ) ) b ) ) )
+1840:1830:ralrimivva 
+                   |- ( N e. NN -> A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. a e. ( Base ` ( EEG ` N ) ) A. b e. ( Base ` ( EEG ` N ) ) E. z e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( a ( dist ` ( EEG ` N ) ) b ) ) )
+1850:20,1840,1590:jca32 
+                   |- ( N e. NN -> ( ( EEG ` N ) e. _V /\ ( A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) A. u e. ( Base ` ( EEG ` N ) ) A. a e. ( Base ` ( EEG ` N ) ) A. b e. ( Base ` ( EEG ` N ) ) A. c e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( ( x =/= y /\ y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) /\ ( ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) /\ ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) ) -> ( z ( dist ` ( EEG ` N ) ) u ) = ( c ( dist ` ( EEG ` N ) ) v ) ) /\ A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. a e. ( Base ` ( EEG ` N ) ) A. b e. ( Base ` ( EEG ` N ) ) E. z e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( a ( dist ` ( EEG ` N ) ) b ) ) ) ) )
+1860:310,120,130:istrkgcb 
+                   |- ( ( EEG ` N ) e. TarskiGCB <-> ( ( EEG ` N ) e. _V /\ ( A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. z e. ( Base ` ( EEG ` N ) ) A. u e. ( Base ` ( EEG ` N ) ) A. a e. ( Base ` ( EEG ` N ) ) A. b e. ( Base ` ( EEG ` N ) ) A. c e. ( Base ` ( EEG ` N ) ) A. v e. ( Base ` ( EEG ` N ) ) ( ( ( x =/= y /\ y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ b e. ( a ( Itv ` ( EEG ` N ) ) c ) ) /\ ( ( ( x ( dist ` ( EEG ` N ) ) y ) = ( a ( dist ` ( EEG ` N ) ) b ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( b ( dist ` ( EEG ` N ) ) c ) ) /\ ( ( x ( dist ` ( EEG ` N ) ) u ) = ( a ( dist ` ( EEG ` N ) ) v ) /\ ( y ( dist ` ( EEG ` N ) ) u ) = ( b ( dist ` ( EEG ` N ) ) v ) ) ) ) -> ( z ( dist ` ( EEG ` N ) ) u ) = ( c ( dist ` ( EEG ` N ) ) v ) ) /\ A. x e. ( Base ` ( EEG ` N ) ) A. y e. ( Base ` ( EEG ` N ) ) A. a e. ( Base ` ( EEG ` N ) ) A. b e. ( Base ` ( EEG ` N ) ) E. z e. ( Base ` ( EEG ` N ) ) ( y e. ( x ( Itv ` ( EEG ` N ) ) z ) /\ ( y ( dist ` ( EEG ` N ) ) z ) = ( a ( dist ` ( EEG ` N ) ) b ) ) ) ) )
+1870:1850,1860:sylibr 
+                   |- ( N e. NN -> ( EEG ` N ) e. TarskiGCB )
+1880:310,120:elntg |- ( N e. NN -> ( LineG ` ( EEG ` N ) ) = ( x e. ( Base ` ( EEG ` N ) ) , y e. ( ( Base ` ( EEG ` N ) ) \ { x } ) |-> { z e. ( Base ` ( EEG ` N ) ) | ( z e. ( x ( Itv ` ( EEG ` N ) ) y ) \/ x e. ( z ( Itv ` ( EEG ` N ) ) y ) \/ y e. ( x ( Itv ` ( EEG ` N ) ) z ) ) } ) )
+1890:130,120,310:istrkgl 
+                   |- ( ( EEG ` N ) e. { f | [. ( Base ` f ) / p ]. [. ( Itv ` f ) / i ]. ( LineG ` f ) = ( x e. p , y e. ( p \ { x } ) |-> { z e. p | ( z e. ( x i y ) \/ x e. ( z i y ) \/ y e. ( x i z ) ) } ) } <-> ( ( EEG ` N ) e. _V /\ ( LineG ` ( EEG ` N ) ) = ( x e. ( Base ` ( EEG ` N ) ) , y e. ( ( Base ` ( EEG ` N ) ) \ { x } ) |-> { z e. ( Base ` ( EEG ` N ) ) | ( z e. ( x ( Itv ` ( EEG ` N ) ) y ) \/ x e. ( z ( Itv ` ( EEG ` N ) ) y ) \/ y e. ( x ( Itv ` ( EEG ` N ) ) z ) ) } ) ) )
+1900:1890,1880,20:sylanbrc 
+                   |- ( N e. NN -> ( EEG ` N ) e. { f | [. ( Base ` f ) / p ]. [. ( Itv ` f ) / i ]. ( LineG ` f ) = ( x e. p , y e. ( p \ { x } ) |-> { z e. p | ( z e. ( x i y ) \/ x e. ( z i y ) \/ y e. ( x i z ) ) } ) } )
+1910:1900,1870:elind 
+                   |- ( N e. NN -> ( EEG ` N ) e. ( TarskiGCB i^i { f | [. ( Base ` f ) / p ]. [. ( Itv ` f ) / i ]. ( LineG ` f ) = ( x e. p , y e. ( p \ { x } ) |-> { z e. p | ( z e. ( x i y ) \/ x e. ( z i y ) \/ y e. ( x i z ) ) } ) } ) )
+1920:1910,1210:elind 
+                   |- ( N e. NN -> ( EEG ` N ) e. ( ( TarskiGC i^i TarskiGB ) i^i ( TarskiGCB i^i { f | [. ( Base ` f ) / p ]. [. ( Itv ` f ) / i ]. ( LineG ` f ) = ( x e. p , y e. ( p \ { x } ) |-> { z e. p | ( z e. ( x i y ) \/ x e. ( z i y ) \/ y e. ( x i z ) ) } ) } ) ) )
+1930::df-trkg      |- TarskiG = ( ( TarskiGC i^i TarskiGB ) i^i ( TarskiGCB i^i { f | [. ( Base ` f ) / p ]. [. ( Itv ` f ) / i ]. ( LineG ` f ) = ( x e. p , y e. ( p \ { x } ) |-> { z e. p | ( z e. ( x i y ) \/ x e. ( z i y ) \/ y e. ( x i z ) ) } ) } ) )
+qed:1930,1920:syl6eleqr 
+                   |- ( N e. NN -> ( EEG ` N ) e. TarskiG )
+
+$)
+

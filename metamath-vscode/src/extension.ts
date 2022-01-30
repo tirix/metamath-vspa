@@ -1,5 +1,5 @@
 import { commands, window, workspace, ExtensionContext, TextDocument, EndOfLine } from 'vscode';
-
+import * as fs from 'fs'; 
 import {
 	LanguageClient,
 	LanguageClientOptions,
@@ -11,14 +11,23 @@ import {
 let client: LanguageClient;
 
 function startClient() {
+	// global config
 	let config = workspace.getConfiguration('metamath');
+	// local config, like main MM file
+	let configFilePath = './.metamath.json';
+	if (fs.existsSync(configFilePath)) {
+		config.push(...JSON.parse(fs.readFileSync(configFilePath, 'utf-8')));
+	}
+
 	let mmLspPath: string = config.get('executablePath') || 'mm-lsp-server';
+	let mainFilePath: string = config.get('mainFilePath') || 'set.mm';
+	let jobs: string = config.get('jobs') || '1';
 
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
 	let serverOptions: ServerOptions = {
-		run: { command: mmLspPath, args: [] },
-		debug: { command: mmLspPath, args: ['--debug'] }
+		run: { command: mmLspPath, args: [ '--jobs', jobs, mainFilePath ] },
+		debug: { command: mmLspPath, args: ['--debug', '--jobs', jobs, mainFilePath] }
 	};
 
 	// Options to control the language client
