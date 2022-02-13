@@ -1,6 +1,10 @@
 # metamath-vspa
 A Visual Studio extension and LSP server for Metamath
 
+## Status
+
+The server is still in an early experimental state. It is usable but many advanced features have not yet been implemented.
+
 ## How-to
 
 ### Installation
@@ -18,3 +22,12 @@ Ultimately, the VSCode extension is also meant to be delivered on the Visual Stu
 * Open the directory `metamath-vspa/metamath-vscode`
 * Choose 'Run/Start Debugging' from the menu or hit the corresponding shortcut (F5)
 
+## Features
+
+* Hovering over a label provides the statement information (hypotheses, assertion, associated comment)
+* The "Go to definition" command, when performed on a label, leads to the corresponding statement's definition.
+
+## Acknowledgements
+
+- This server is based on Mario Carneiro's LSP server for MM0.
+- Its core functions are provided by the [metamath-knife](https://github.com/david-a-wheeler/metamath-knife) library.

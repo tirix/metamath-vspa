@@ -1,20 +1,18 @@
 mod util;
+mod vfs;
+mod hover;
+mod definition;
+mod server;
 
 use log::*;
 use std::str::FromStr;
 use clap::{Arg,App};
 use std::error::Error;
-use serde::ser::Serialize;
-use std::sync::atomic::AtomicBool;
-use serde_json::{from_value, to_value};
-use std::sync::Arc;
-use crossbeam::channel::{SendError, RecvError};
-use crate::util::FileRef;
+use crossbeam::channel::SendError;
+use crate::server::SERVER;
 //use crate::util::{ArcList, ArcString, BoxError, FileRef, FileSpan, Span, MutexExt, CondvarExt};
-use lsp_types::*;
-use lsp_server::{Connection, ErrorCode, Message, Notification, ProtocolError,
-    Request, RequestId, Response, ResponseError};
-use metamath_knife::{Database, database::DbOptions};
+use lsp_server::{ProtocolError};
+use metamath_knife::database::DbOptions;
 
 /// Newtype for `Box<dyn Error + Send + Sync>`
 pub type BoxError = Box<dyn Error + Send + Sync>;
@@ -22,9 +20,8 @@ pub type BoxError = Box<dyn Error + Send + Sync>;
 #[derive(Debug)]
 struct ServerError(BoxError);
 
-type Result<T, E = ServerError> = std::result::Result<T, E>;
-
-
+type Result<T, E = ServerError> = std::result::Result<T, E>;  
+  
 impl From<serde_json::Error> for ServerError {
     fn from(e: serde_json::error::Error) -> Self { ServerError(Box::new(e)) }
 }
@@ -45,6 +42,10 @@ impl From<std::io::Error> for ServerError {
     fn from(e: std::io::Error) -> Self { ServerError(Box::new(e)) }
 }
 
+impl From<std::fmt::Error> for ServerError {
+    fn from(e: std::fmt::Error) -> Self { ServerError(Box::new(e)) }
+}
+
 impl From<BoxError> for ServerError {
     fn from(e: BoxError) -> Self { ServerError(e) }
 }
@@ -53,193 +54,37 @@ impl From<String> for ServerError {
     fn from(e: String) -> Self { ServerError(e.into()) }
 }
 
-#[derive(Debug)]
-enum RequestType {
-    Completion(CompletionParams),
-    CompletionResolve(Box<CompletionItem>),
-    Hover(TextDocumentPositionParams),
-    Definition(TextDocumentPositionParams),
-    DocumentSymbol(DocumentSymbolParams),
-    References(ReferenceParams),
-    DocumentHighlight(DocumentHighlightParams),
+impl From<()> for ServerError {
+    fn from(e: ()) -> Self { "Internal Error".into() }
 }
-
-fn parse_request(Request {id, method, params}: Request) -> Result<Option<(RequestId, RequestType)>> {
-    Ok(match method.as_str() {
-        "textDocument/completion"        => Some((id, RequestType::Completion(from_value(params)?))),
-        "completionItem/resolve"         => Some((id, RequestType::CompletionResolve(from_value(params)?))),
-        "textDocument/hover"             => Some((id, RequestType::Hover(from_value(params)?))),
-        "textDocument/definition"        => Some((id, RequestType::Definition(from_value(params)?))),
-        "textDocument/documentSymbol"    => Some((id, RequestType::DocumentSymbol(from_value(params)?))),
-        "textDocument/references"        => Some((id, RequestType::References(from_value(params)?))),
-        "textDocument/documentHighlight" => Some((id, RequestType::DocumentHighlight(from_value(params)?))),
-        _ => None
-    })
-}
-
-fn hover(path: FileRef, pos: Position) -> Result<Option<Hover>, ResponseError> {
-    let string = MarkedString::String("Aloha".into());
-    Ok(Some(Hover {
-        range: None, //Some(text.to_range(out[0].0)),
-        contents: HoverContents::Scalar(string),
-    }))
-}
-
-struct RequestHandler {
-    id: RequestId,
-    //cancel: Arc<AtomicBool>,
-}
-
-impl RequestHandler {
-    fn response_err(code: ErrorCode, message: impl Into<String>) -> ResponseError {
-        ResponseError {code: code as i32, message: message.into(), data: None}
-    }
- 
-    fn handle(self, req: RequestType) -> Result<impl Serialize, ResponseError> {
-        match req {
-            RequestType::Hover(TextDocumentPositionParams {text_document: doc, position}) =>
-                hover(doc.uri.into(), position),
-            _ => Err(RequestHandler::response_err(ErrorCode::MethodNotFound, "Not implemented")),
-        }
-    }
-}
-
-struct Server {
-    db: Database,
-    conn: Connection,
-}
-
-impl Server {
-    fn new(db: Database) -> Self {
-        let (conn, _iot) = Connection::stdio();
-        Server {
-            db,
-            conn,
-        }
-    }
-
-    fn start(&self) -> Result<()> {
-        let params : InitializeParams = from_value(self.conn.initialize(
-            to_value(ServerCapabilities {
-                text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::Incremental)),
-                hover_provider: Some(true.into()),
-                completion_provider: Some(CompletionOptions {
-                    resolve_provider: Some(true),
-                    ..Default::default()
-                }),
-                definition_provider: Some(OneOf::Left(true)),
-                document_symbol_provider: Some(OneOf::Left(true)),
-                references_provider: Some(OneOf::Left(true)),
-                document_highlight_provider: Some(OneOf::Left(true)),
-                ..Default::default()
-            })?
-        )?)?;
-        Ok(())
-    }
-
-    fn send_message<T: Into<Message>>(&self, t: T) -> Result<()> {
-        Ok(self.conn.sender.send(t.into())?)
-    }
-      
-    fn log_message(&self, message: String) -> Result<()> {
-        self.send_message(Notification {
-            method: "window/logMessage".to_owned(),
-            params: to_value(LogMessageParams {typ: MessageType::Log, message})?
-        })
-    }
-    
-    fn send_diagnostics(&self, uri: Url, version: Option<i32>, diagnostics: Vec<Diagnostic>) -> Result<()> {
-        self.send_message(Notification {
-            method: "textDocument/publishDiagnostics".to_owned(),
-            params: to_value(PublishDiagnosticsParams {uri, diagnostics, version})?
-        })
-    }
-      
-    fn send_config_request(&self) -> Result<()> {
-        use lsp_types::request::{WorkspaceConfiguration, Request};
-        let params = lsp_types::ConfigurationParams {
-            items: vec![lsp_types::ConfigurationItem {
-                scope_uri: None,
-                section: Some("metamath".to_string()),
-            }],
-        };
-        let req = lsp_server::Request::new(
-            RequestId::from("get_config".to_string()),
-            WorkspaceConfiguration::METHOD.to_string(),
-            params
-        );
-        self.send_message(req)
-    }
-    
-    fn run(&self) {
-        // We need this to be able to match on the response for the config getter, but
-        // we can't use a string slice since lsp_server doesn't export IdRepr
-        let get_config_id = lsp_server::RequestId::from(String::from("get_config"));
-        // Request the user's initial configuration on startup.
-        if let Err(e) = self.send_config_request() {
-            error!("Server panicked: {:?}", e);
-        }
-    
-        loop {
-            match (|| -> Result<bool> {
-                match self.conn.receiver.recv() {
-                    Err(RecvError) => return Ok(true),
-                    Ok(Message::Request(req)) => {
-                        if self.conn.handle_shutdown(&req)? {
-                            return Ok(true)
-                        }
-                        if let Some((id, req)) = parse_request(req)? {
-                            info!("Got request: {:?}", req);
-                            let handler = RequestHandler { id: id.clone() };
-                            let resp = handler.handle(req);
-                            self.response(id, resp)?;
-                            // Job::RequestHandler(id, Some(Box::new(req))).spawn();
-                        }
-                    }
-                    Ok(Message::Response(resp)) => {
-                        if resp.id == get_config_id {
-                            if let Some(val) = resp.result {
-                                info!("Set Option: {:?}", val);
-                                // let [config]: [ServerOptions; 1] = from_value(val)?;
-                                // *self.options.ulock() = config;
-                            }
-                        } else {
-                            info!("Got response: {:?}", resp);
-                            // let mut caps = caps.ulock();
-                            // if caps.reg_id.as_ref().map_or(false, |rid| rid == &resp.id) {
-                            // caps.finish_register(&resp);
-                            // } else {
-                            //     log!("response to unknown request {}", resp.id)
-                            // }
-                        }
-                }
-                Ok(Message::Notification(notif)) => {
-                    info!("Got notification: {:?}", notif);
-                }
-            }
-            Ok(false)
-        })() {
-            Ok(true) => break,
-            Ok(false) => {},
-            Err(e) => error!("Server panicked: {:?}", e)
-            }
-        }
-    }
-
-    fn response<T: Serialize>(&self, id: RequestId, resp: Result<T, ResponseError>) -> Result<()> {
-        self.conn.sender.send(Message::Response(match resp {
-            Ok(val) => Response { id, result: Some(to_value(val)?), error: None },
-            Err(e) => Response { id, result: None, error: Some(e) }
-        }))?;
-        Ok(())
-    }
-}
-
 
 fn positive_integer(val: String) -> Result<(), String> {
     u32::from_str(&val).map(|_| ()).map_err(|e| format!("{}", e))
 }
 
+/// Extension trait for [`Mutex`](std::sync::Mutex)`<T>`.
+pub trait MutexExt<T> {
+    /// Like `lock`, but propagates instead of catches panics.
+    fn ulock(&self) -> std::sync::MutexGuard<'_, T>;
+  }
+  
+  impl<T> MutexExt<T> for std::sync::Mutex<T> {
+    fn ulock(&self) -> std::sync::MutexGuard<'_, T> {
+      self.lock().expect("propagating poisoned mutex")
+    }
+  }
+  /// Extension trait for [`Condvar`](std::sync::Condvar).
+  pub trait CondvarExt {
+    /// Like `wait`, but propagates instead of catches panics.
+    fn uwait<'a, T>(&self, g: std::sync::MutexGuard<'a, T>) -> std::sync::MutexGuard<'a, T>;
+  }
+  
+  impl CondvarExt for std::sync::Condvar {
+    fn uwait<'a, T>(&self, g: std::sync::MutexGuard<'a, T>) -> std::sync::MutexGuard<'a, T> {
+      self.wait(g).expect("propagating poisoned mutex")
+    }
+  }
+  
 /// Main entry point for the Metamath language server.
 ///
 /// This function sets up an [LSP] connection using stdin and stdout. 
@@ -274,12 +119,11 @@ pub fn main() {
             .takes_value(true)
             .validator(positive_integer))
         .get_matches();
-    if matches.is_present("debug") || true {
-        use {simplelog::{Config, LevelFilter, WriteLogger}, std::fs::File};
-        std::env::set_var("RUST_BACKTRACE", "1");
-        if let Ok(f) = File::create("lsp.log") {
-            let _ = WriteLogger::init(LevelFilter::Debug, Config::default(), f);
-        }
+    let level = if matches.is_present("debug") { LevelFilter::Debug } else { LevelFilter::Info };
+    use {simplelog::{Config, WriteLogger}, std::fs::File};
+    std::env::set_var("RUST_BACKTRACE", "1");
+    if let Ok(f) = File::create("lsp.log") {
+        let _ = WriteLogger::init(level, Config::default(), f);
     }
     let db_file_name = matches.value_of("database").unwrap_or("None");
     let job_count = usize::from_str(matches.value_of("jobs").unwrap_or("1")).expect("validator should check this");
@@ -290,15 +134,13 @@ pub fn main() {
         jobs: job_count,
         ..Default::default()
     };
-    let mut db = Database::new(options);
-    db.parse(db_file_name.into(), Vec::new());
+    SERVER.init(options, db_file_name);
 
-    let server = Server::new(db); 
     info!("Starting server");
-    if let Err(e) = server.start() {
+    if let Err(e) = SERVER.start() {
         error!("Error when starting server: {:?}", e);
     } else {
         info!("Started server");
-        server.run();
+        SERVER.run();
     }
 }

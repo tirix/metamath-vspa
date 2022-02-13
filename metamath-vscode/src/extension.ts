@@ -27,7 +27,7 @@ function startClient() {
 	// Otherwise the run options are used
 	let serverOptions: ServerOptions = {
 		run: { command: mmLspPath, args: [ '--jobs', jobs, mainFilePath ] },
-		debug: { command: mmLspPath, args: ['--debug', '--jobs', jobs, mainFilePath] }
+		debug: { command: mmLspPath, args: [ '--jobs', jobs, mainFilePath ] }, //['--debug', '--jobs', jobs, mainFilePath] }
 	};
 
 	// Options to control the language client
