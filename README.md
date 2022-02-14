@@ -27,6 +27,10 @@ Ultimately, the VSCode extension is also meant to be delivered on the Visual Stu
 * Hovering over a label provides the statement information (hypotheses, assertion, associated comment)
 * The "Go to definition" command, when performed on a label, leads to the corresponding statement's definition.
 
+Preview:
+
+![mm-vscode-1](https://user-images.githubusercontent.com/5831830/153800753-80e6af30-7a5e-4154-addb-39bd3ff1ae6f.gif)
+
 ## Acknowledgements
 
 - This server is based on Mario Carneiro's LSP server for MM0.
