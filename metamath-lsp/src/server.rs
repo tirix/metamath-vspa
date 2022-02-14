@@ -43,13 +43,25 @@ fn parse_request(Request {id, method, params}: Request) -> Result<Option<(Reques
     })
 }
 
+#[inline]
+/// Whether a character can be part of a label
+fn is_label_char(c: char) -> bool {
+    c == '.'
+    || c == '-'
+    || c == '_'
+    || ('a'..='z').contains(&c)
+    || ('0'..='9').contains(&c)
+    || ('A'..='Z').contains(&c)
+}
+
+/// Attempts to find a word around the given position
 pub fn word_at(pos: Position, text: FileContents) -> (String, Range) {
     let line = text.0.get_line(pos.line as usize).unwrap();
     let mut start = 0;
     let mut end = line.len_chars() as u32;
     let mut idx = 0;
     for ch in line.chars() {
-        if ch == ' ' { 
+        if !is_label_char(ch) { 
             if idx < pos.character { start = idx+1; }
             else { end = idx; break; }
         }
@@ -235,7 +247,7 @@ impl Server {
                             let DidOpenTextDocumentParams {text_document: doc} = from_value(notif.params)?;
                             let path = doc.uri.into();
                             info!("open {:?}", path);
-                            let vf = self.vfs.open_virt(path, doc.version, doc.text);
+                            let _vf = self.vfs.open_virt(path, doc.version, doc.text);
                         },
                         // DidChangeTextDocument::METHOD => {
                         //     let DidChangeTextDocumentParams {text_document: doc} = from_value(notif.params)?;
