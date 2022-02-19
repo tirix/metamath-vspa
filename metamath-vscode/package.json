@@ -78,12 +78,27 @@
 				"description": "Shut down the Language Server."
 			},
 			{
+				"command": "metamath.showProof",
+				"category": "MM",
+				"title": "Show Proof",
+				"description": "Open the corresponding proof file."
+			},
+			{
 				"command": "metamath.unify",
 				"category": "MM",
 				"title": "Unify",
 				"description": "Unify unproven statements the current file."
 			}
-		]
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"when": "resourceLangId == metamath || resourceLangId == metamath-proof",
+					"command": "metamath.showProof",
+					"group": "navigation"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

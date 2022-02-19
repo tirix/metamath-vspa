@@ -2,6 +2,7 @@ mod util;
 mod vfs;
 mod hover;
 mod definition;
+mod show_proof;
 mod server;
 
 use log::*;
@@ -13,6 +14,7 @@ use crate::server::SERVER;
 //use crate::util::{ArcList, ArcString, BoxError, FileRef, FileSpan, Span, MutexExt, CondvarExt};
 use lsp_server::{ProtocolError};
 use metamath_knife::database::DbOptions;
+use metamath_knife::export::ExportError;
 
 /// Newtype for `Box<dyn Error + Send + Sync>`
 pub type BoxError = Box<dyn Error + Send + Sync>;
@@ -28,6 +30,10 @@ impl From<serde_json::Error> for ServerError {
 
 impl From<ProtocolError> for ServerError {
     fn from(e: ProtocolError) -> Self { ServerError(Box::new(e)) }
+}
+
+impl From<ExportError> for ServerError {
+    fn from(e: ExportError) -> Self { ServerError(Box::new(e)) }
 }
 
 impl<T: Send + Sync + 'static> From<SendError<T>> for ServerError {

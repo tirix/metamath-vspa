@@ -9,6 +9,7 @@ use serde_json::{from_value, to_value};
 use crossbeam::channel::{RecvError};
 use crate::hover::hover;
 use crate::definition::definition;
+use crate::show_proof::show_proof;
 use crate::vfs::FileContents;
 use crate::vfs::Vfs;
 use crate::Result;
@@ -28,6 +29,7 @@ enum RequestType {
     DocumentSymbol(DocumentSymbolParams),
     References(ReferenceParams),
     DocumentHighlight(DocumentHighlightParams),
+    ShowProof(String),
 }
 
 fn parse_request(Request {id, method, params}: Request) -> Result<Option<(RequestId, RequestType)>> {
@@ -39,6 +41,7 @@ fn parse_request(Request {id, method, params}: Request) -> Result<Option<(Reques
         "textDocument/documentSymbol"    => Some((id, RequestType::DocumentSymbol(from_value(params)?))),
         "textDocument/references"        => Some((id, RequestType::References(from_value(params)?))),
         "textDocument/documentHighlight" => Some((id, RequestType::DocumentHighlight(from_value(params)?))),
+        "metamath/showProof"             => Some((id, RequestType::ShowProof(from_value(params)?))),
         _ => None
     })
 }
@@ -95,6 +98,8 @@ impl RequestHandler {
                 self.response(hover(doc.uri.into(), position, vfs, db)),
             RequestType::Definition(TextDocumentPositionParams {text_document: doc, position}) =>
                 self.response(definition(doc.uri.into(), position, vfs, db)),
+            RequestType::ShowProof(label) =>
+                self.response(show_proof(label, vfs, db)),
             _ => self.response_err(ErrorCode::MethodNotFound, "Not implemented"),
         }
     }

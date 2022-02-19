@@ -1,4 +1,4 @@
-import { commands, window, workspace, ExtensionContext, TextDocument, EndOfLine } from 'vscode';
+import { commands, window, workspace, ExtensionContext, Range, Position, Selection, EndOfLine, CodeActionKind, Uri } from 'vscode';
 import * as fs from 'fs'; 
 import {
 	LanguageClient,
@@ -7,8 +7,28 @@ import {
 	ErrorAction,
 	CloseAction
 } from 'vscode-languageclient';
+import {
+	TextDocumentIdentifier,
+} from 'vscode-languageserver-types';
+import {
+	TextDocumentPositionParams
+} from 'vscode-languageserver-protocol';
+import {
+	RequestType,
+	NotificationType
+} from 'vscode-jsonrpc';
 
 let client: LanguageClient;
+
+// Using our own parameter type does not seem to work
+// interface ShowProofParams {
+//	textDocument: TextDocumentIdentifier;
+//	range: Range;
+// }
+
+namespace ShowProofRequest {
+	export const type = new RequestType<string, string, void>('metamath/showProof');
+}
 
 function startClient() {
 	// global config
@@ -51,12 +71,12 @@ export function activate(context: ExtensionContext) {
 
 	console.log('"Subscribing commands!');
 	context.subscriptions.push(
-		commands.registerCommand('metamath.unify', () => {
-			// Display a message box to the user
-			window.showInformationMessage('Hello World from Metamath!');
-		}),
+		// For File search, see https://github.com/microsoft/vscode/issues/73524
+		// For Text search, see https://github.com/microsoft/vscode/issues/59921
+		commands.registerCommand('metamath.showProof', showProof),
+		commands.registerCommand('metamath.unify', unify),
 		commands.registerCommand('metamath.shutdownServer',
-		  () => client.stop().then(() => {}, () => {})),
+			() => client.stop().then(() => {}, () => {})),
 		commands.registerCommand('metamath.restartServer',
 			() => client.stop().then(startClient, startClient))
 	);
@@ -70,4 +90,44 @@ export function deactivate(): Thenable<void> | undefined {
 	}
 	console.log('"Metamath" extension is now inactive!');
 	return undefined;
+}
+
+function showProof() {
+	window.showInformationMessage('Show proof!');
+	const editor = window.activeTextEditor;
+	let selectionRange: Range;
+	if(!editor) {
+		return;
+	}
+
+	if (!editor.selection.isEmpty) {
+		selectionRange = new Range(
+			editor.selection.start,
+			editor.selection.end
+		);
+	} else {
+		selectionRange = editor.document.lineAt(editor.selection.start.line).range;
+	}
+	let label = editor.document.getText(selectionRange);
+	// 
+	// let params: ShowProofParams = {
+	// 	textDocument: TextDocumentIdentifier.create(editor.document.uri.toString()),
+	// 	range: selectionRange
+	// };
+	client.sendRequest(ShowProofRequest.type, label).then(async (content) => {
+		// Open a new document with the given MMP content
+		const doc = await workspace.openTextDocument({
+			language: 'metamath-proof',
+			content: content
+		});
+		return await window.showTextDocument(doc);
+	});
+}
+
+function unify() {
+	// Display a message box to the user
+	window.showInformationMessage('Hello World from Metamath!');
+	//			editor.edit((editBuilder) => {
+	//				editBuilder.replace(range, result);
+	//			});
 }
