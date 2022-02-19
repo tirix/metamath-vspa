@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: '*'
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-metamath-lsp:
+    name: Metamath LSP
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache metamath-lsp
+      id: cache-metamath-lsp
+      uses: actions/cache@v2
+      with:
+        path: metamath-lsp/target/release/metamath-lsp
+        key: ${{ runner.os }}-metamath-lsp-${{ hashFiles('metamath-lsp/**') }}
+    - name: Install stable rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        default: true
+    - name: Cache build metamath-lsp
+      id: cache-build-metamath-lsp
+      if: ${{ !steps.cache-metamath-lsp.outputs.cache-hit }}
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          metamath-lsp/target
+        key: ${{ runner.os }}-cargo-release-${{ hashFiles('metamath-lsp/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-release-
+    - name: Build metamath-lsp
+      if: ${{ !steps.cache-metamath-lsp.outputs.cache-hit }}
+      working-directory: metamath-lsp
+      run: cargo build --verbose --release
+    - name: Run tests
+      if: ${{ !steps.cache-metamath-lsp.outputs.cache-hit }}
+      working-directory: metamath-lsp
+      run: cargo test --verbose --release
+    - name: Clippy
+      if: ${{ !steps.cache-metamath-lsp.outputs.cache-hit }}
+      working-directory: metamath-lsp
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    - name: Fmt
+      if: ${{ !steps.cache-metamath-lsp.outputs.cache-hit }}
+      working-directory: metamath-lsp
+      run: cargo fmt -- --check
+    - uses: actions/upload-artifact@v2
+      with:
+        name: metamath-lsp
+        path: metamath-lsp/target/release/metamath-lsp
