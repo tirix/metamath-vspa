@@ -1,16 +1,13 @@
 //! Virtual File System
 //! Keeps track of the files opened, and their current in-memory state
 
-use crate::MutexExt;
 use crate::util::FileRef;
+use crate::MutexExt;
 use ropey::Rope;
-use std::{fs, io};
+use std::collections::{hash_map::Entry, HashMap};
 use std::path::PathBuf;
-use std::collections::{
-    hash_map::Entry,
-    HashMap,
-};
 use std::sync::{Arc, Mutex};
+use std::{fs, io};
 
 #[derive(Clone)]
 pub struct FileContents(pub Arc<Rope>);
@@ -51,7 +48,7 @@ impl Vfs {
                 let path = e.key().clone();
                 let vf = VirtualFile::from_path(None, path.path().clone())?;
                 //if path.has_extension("mm") {
-                //  Check if in 
+                //  Check if in
                 //}
                 let val = e.insert(Arc::new(vf)).clone();
                 Ok((path, val))
@@ -63,13 +60,16 @@ impl Vfs {
         self.0.ulock().get(file).unwrap().text.ulock().1.clone()
     }
 
-    pub fn open_virt(&self, path: FileRef, version: i32, text: String) -> io::Result<Arc<VirtualFile>> {
+    pub fn open_virt(
+        &self,
+        path: FileRef,
+        version: i32,
+        text: String,
+    ) -> io::Result<Arc<VirtualFile>> {
         let file = Arc::new(VirtualFile::from_text(Some(version), text));
         let file = match self.0.ulock().entry(path) {
-            Entry::Occupied(_entry) => {
-                file
-            }
-            Entry::Vacant(entry) => entry.insert(file).clone()
+            Entry::Occupied(_entry) => file,
+            Entry::Vacant(entry) => entry.insert(file).clone(),
         };
         Ok(file)
     }
