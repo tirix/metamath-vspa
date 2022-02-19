@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod util;
 mod vfs;
 mod hover;
@@ -61,7 +63,7 @@ impl From<String> for ServerError {
 }
 
 impl From<()> for ServerError {
-    fn from(e: ()) -> Self { "Internal Error".into() }
+    fn from(_: ()) -> Self { "Internal Error".into() }
 }
 
 fn positive_integer(val: String) -> Result<(), String> {

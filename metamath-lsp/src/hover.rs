@@ -2,17 +2,14 @@
 
 use crate::server::word_at;
 use crate::util::FileRef;
-use crate::vfs::{FileContents, Vfs};
+use crate::vfs::Vfs;
 use crate::ServerError;
-use ropey::RopeSlice;
 use lsp_types::*;
-use lsp_server::{ErrorCode, ResponseError};
 use metamath_knife::Database;
-use metamath_knife::statement::Span;
 use metamath_knife::statement::as_str;
 use metamath_knife::statement::StatementRef;
 use metamath_knife::comment_parser::CommentItem;
-use std::fmt::{Display, Write};
+use std::fmt::Write;
 
 fn comment_markup_format(stmt: StatementRef<'_>, db: Database) -> Result<MarkedString, ServerError> {
     let mut out = String::new();
@@ -21,13 +18,13 @@ fn comment_markup_format(stmt: StatementRef<'_>, db: Database) -> Result<MarkedS
     if stmt.statement_type().is_assertion() {
         writeln!(out, "```metamath")?;
         // Hypotheses
-        for (label, _) in db.scope_result().get(stmt.label()).ok_or(ServerError::from("Frame not found"))?.as_ref(&db).essentials() {
+        for (label, _) in db.scope_result().get(stmt.label()).ok_or_else(|| ServerError::from("Frame not found"))?.as_ref(&db).essentials() {
             let hyp_stmt = db.statement_by_label(label).unwrap();
             write!(out, "{} ", as_str(hyp_stmt.label()))?;
             for token in hyp_stmt.math_iter() {
                 write!(out, "{} ", as_str(&token))?;
             }
-            writeln!(out, "")?;
+            writeln!(out)?;
         }
 
         // Statement assertion
@@ -42,20 +39,20 @@ fn comment_markup_format(stmt: StatementRef<'_>, db: Database) -> Result<MarkedS
         writeln!(out, "---")?;
         for item in comment_stmt.comment_parser() {
             match item {
-                CommentItem::Text(span) => { write!(out, "{}", as_str(span.as_ref(&buf)))? },
-                CommentItem::LineBreak(_) => { writeln!(out, "")? },
+                CommentItem::Text(span) => { write!(out, "{}", as_str(span.as_ref(buf)))? },
+                CommentItem::LineBreak(_) => { writeln!(out, "\n")? },
                 CommentItem::StartMathMode(_) => { write!(out, "`")? },
                 CommentItem::EndMathMode(_) => { write!(out, " `")? },
-                CommentItem::MathToken(span) => { write!(out, " {}", as_str(span.as_ref(&buf)))? },
-                CommentItem::Label(_, span) => { write!(out, "`~ {}`", as_str(span.as_ref(&buf)))? },
-                CommentItem::Url(_, span) => { write!(out, "[{url}]({url})", url = as_str(span.as_ref(&buf)))? },
+                CommentItem::MathToken(span) => { write!(out, " {}", as_str(span.as_ref(buf)))? },
+                CommentItem::Label(_, span) => { write!(out, "`~ {}`", as_str(span.as_ref(buf)))? },
+                CommentItem::Url(_, span) => { write!(out, "[{url}]({url})", url = as_str(span.as_ref(buf)))? },
                 CommentItem::StartHtml(_) => {},
                 CommentItem::EndHtml(_) => {},
                 CommentItem::StartSubscript(_) => {},
                 CommentItem::EndSubscript(_) => {},
                 CommentItem::StartItalic(_) => { write!(out, " _")? },
                 CommentItem::EndItalic(_) => { write!(out, "_ ")? },
-                CommentItem::BibTag(span) => { write!(out, "[{}]", as_str(span.as_ref(&buf)))? },
+                CommentItem::BibTag(span) => { write!(out, "[{}]", as_str(span.as_ref(buf)))? },
             }
         }
     }

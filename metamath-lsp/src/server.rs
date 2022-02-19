@@ -62,13 +62,11 @@ pub fn word_at(pos: Position, text: FileContents) -> (String, Range) {
     let line = text.0.get_line(pos.line as usize).unwrap();
     let mut start = 0;
     let mut end = line.len_chars() as u32;
-    let mut idx = 0;
-    for ch in line.chars() {
+    for (idx, ch) in line.chars().enumerate() {
         if !is_label_char(ch) { 
-            if idx < pos.character { start = idx+1; }
-            else { end = idx; break; }
+            if idx < pos.character as usize { start = (idx + 1) as u32; }
+            else { end = idx as u32; break; }
         }
-        idx += 1;
     }
     (
         line.get_slice(start as usize.. end as usize).unwrap().to_string(),
@@ -134,18 +132,17 @@ impl Server {
     }
 
     pub fn init(&self, options: DbOptions, file_name: &str) {
-        self.show_message(MessageType::INFO, "Loading database...".to_string());
         let mut db = Database::new(options);
         db.parse(file_name.into(), Vec::new());
         db.name_pass();
         db.scope_pass();
         db.stmt_parse_pass();
         *self.db.lock().unwrap() = Some(db);
-        self.show_message(MessageType::INFO, "Database loaded.".to_string());
+        self.log_message("Database loaded.".to_string()).ok();
     }
 
     pub(crate) fn start(&self) -> Result<()> {
-        let params : InitializeParams = from_value(self.conn.initialize(
+        let _params : InitializeParams = from_value(self.conn.initialize(
             to_value(ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::INCREMENTAL)),
                 hover_provider: Some(true.into()),
@@ -223,7 +220,7 @@ impl Server {
                         }
                         if let Some((id, req)) = parse_request(req)? {
                             info!("Got request: {:?}", req);
-                            let handler = RequestHandler { id: id.clone() };
+                            let handler = RequestHandler { id };
                             handler.handle(req)?;
                             // Job::RequestHandler(id, Some(Box::new(req))).spawn();
                         }

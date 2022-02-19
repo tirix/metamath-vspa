@@ -10,7 +10,7 @@ use std::collections::{
     hash_map::Entry,
     HashMap,
 };
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}, Condvar};
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct FileContents(pub Arc<Rope>);
@@ -65,8 +65,8 @@ impl Vfs {
 
     pub fn open_virt(&self, path: FileRef, version: i32, text: String) -> io::Result<Arc<VirtualFile>> {
         let file = Arc::new(VirtualFile::from_text(Some(version), text));
-        let file = match self.0.ulock().entry(path.clone()) {
-            Entry::Occupied(entry) => {
+        let file = match self.0.ulock().entry(path) {
+            Entry::Occupied(_entry) => {
                 file
             }
             Entry::Vacant(entry) => entry.insert(file).clone()
