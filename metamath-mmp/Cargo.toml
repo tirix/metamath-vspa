@@ -1,0 +1,18 @@
+[package]
+name = "metamath-mmp"
+authors = ["Thierry Arnoux"]
+description = "A Metmamath proof file processing and unification tool"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+simplelog = "0.11"
+clap = { version = "3.1", features = ["cargo"] }
+ropey = "1.2"
+simple_logger = "1.13"
+lazy_static = "1.4"
+regex = { version = "1.5", default-features = false, features = ["std", "perf"] }
+metamath-knife = { git = "https://github.com/david-a-wheeler/metamath-knife", tag = "v0.3.1" }

@@ -7,3 +7,6 @@ metamath-vscode/dist
 metamath-vscode/node_modules
 metamath-vscode/.vscode-test/
 metamath-vscode/*.vsix
+metamath-mmp/target
+metamath-mmp/Cargo.lock
+metamath-mmp/*.rs.bk
