@@ -2,6 +2,7 @@
 //! requests/replies and notifications back to the client.
 
 use crate::definition::definition;
+use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
 use crate::show_proof::show_proof;
 use crate::vfs::FileContents;
@@ -11,15 +12,16 @@ use crate::ServerError;
 use crossbeam::channel::RecvError;
 use lazy_static::lazy_static;
 use log::*;
-use serde::ser::Serialize;
-use serde_json::{from_value, to_value};
-use std::sync::{Arc, Mutex};
-//use crate::util::{ArcList, ArcString, BoxError, FileRef, FileSpan, Span, MutexExt, CondvarExt};
 use lsp_server::{
     Connection, ErrorCode, Message, Notification, Request, RequestId, Response, ResponseError,
 };
 use lsp_types::*;
+use metamath_knife::diag::DiagnosticClass;
 use metamath_knife::{database::DbOptions, Database};
+use serde::ser::Serialize;
+use serde_json::{from_value, to_value};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
 enum RequestType {
@@ -109,7 +111,14 @@ impl RequestHandler {
     }
 
     fn handle(self, req: RequestType) -> Result<()> {
-        let db = SERVER.db.lock().unwrap().as_ref().unwrap().clone();
+        let db = SERVER
+            .workspace
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .db
+            .clone();
         let vfs = &SERVER.vfs;
         match req {
             RequestType::Hover(TextDocumentPositionParams {
@@ -140,8 +149,13 @@ lazy_static! {
     pub static ref SERVER: Server = Server::new();
 }
 
+pub struct Workspace {
+    db: Database,
+    diags: HashMap<Url, Vec<Diagnostic>>,
+}
+
 pub struct Server {
-    pub db: Arc<Mutex<Option<Database>>>,
+    pub workspace: Arc<Mutex<Option<Workspace>>>,
     pub vfs: Vfs,
     pub conn: Connection,
 }
@@ -150,7 +164,7 @@ impl Server {
     fn new() -> Self {
         let (conn, _iot) = Connection::stdio();
         Server {
-            db: Arc::default(),
+            workspace: Arc::default(),
             vfs: Vfs::default(),
             conn,
         }
@@ -162,7 +176,19 @@ impl Server {
         db.name_pass();
         db.scope_pass();
         db.stmt_parse_pass();
-        *self.db.lock().unwrap() = Some(db);
+        let mm_diags = db.diag_notations(&[
+            DiagnosticClass::Parse,
+            DiagnosticClass::Scope,
+            DiagnosticClass::Verify,
+            DiagnosticClass::Grammar,
+            DiagnosticClass::StmtParse,
+        ]);
+        let lsp_diags = db.render_diags(mm_diags, make_lsp_diagnostic);
+        let mut diags = HashMap::new();
+        for (uri, diag) in lsp_diags.into_iter().flatten() {
+            diags.entry(uri).or_insert_with(Vec::new).push(diag);
+        }
+        *self.workspace.lock().unwrap() = Some(Workspace { db, diags });
         self.log_message("Database loaded.".to_string()).ok();
     }
 
@@ -186,11 +212,22 @@ impl Server {
         Ok(())
     }
 
+    fn send_workspace_diagnostics(&self) {
+        let guard = self.workspace.lock().unwrap();
+        let workspace = guard.as_ref().unwrap();
+        for (uri, diagnostics) in &workspace.diags {
+            SERVER
+                .send_diagnostics(uri.clone(), None, diagnostics.to_vec())
+                .ok();
+        }
+    }
+
     fn send_message<T: Into<Message>>(&self, t: T) -> Result<()> {
         Ok(self.conn.sender.send(t.into())?)
     }
 
     fn show_message(&self, typ: MessageType, message: String) -> Result<()> {
+        warn!("{:?}: {}", typ, message);
         self.send_message(Notification {
             method: "window/showMessage".to_owned(),
             params: to_value(ShowMessageParams { typ, message })?,
@@ -207,12 +244,13 @@ impl Server {
         })
     }
 
-    fn send_diagnostics(
+    pub(crate) fn send_diagnostics(
         &self,
         uri: Url,
         version: Option<i32>,
         diagnostics: Vec<Diagnostic>,
     ) -> Result<()> {
+        info!("Sending diagnostics: {:?}", diagnostics);
         self.send_message(Notification {
             method: "textDocument/publishDiagnostics".to_owned(),
             params: to_value(PublishDiagnosticsParams {
@@ -243,10 +281,13 @@ impl Server {
         // We need this to be able to match on the response for the config getter, but
         // we can't use a string slice since lsp_server doesn't export IdRepr
         let get_config_id = lsp_server::RequestId::from(String::from("get_config"));
+
         // Request the user's initial configuration on startup.
         if let Err(e) = self.send_config_request() {
             error!("Server panicked: {:?}", e);
         }
+        // We already opened and parsed the Database, send the corresponding diagnostics
+        self.send_workspace_diagnostics();
 
         loop {
             match (|| -> Result<bool> {

@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod definition;
+mod diag;
 mod hover;
 mod server;
 mod show_proof;

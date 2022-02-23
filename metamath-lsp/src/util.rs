@@ -101,6 +101,10 @@ fn make_relative(buf: &std::path::Path) -> String {
         .to_owned()
 }
 
+fn make_absolute(path: &str) -> PathBuf {
+    std::fs::canonicalize(path).expect("Bad file path")
+}
+
 #[derive(Default)]
 struct FileRefInner {
     path: PathBuf,
@@ -117,6 +121,18 @@ struct FileRefInner {
 #[derive(Clone, Default)]
 pub struct FileRef(Arc<FileRefInner>);
 
+impl From<&str> for FileRef {
+    #[cfg(target_arch = "wasm32")]
+    fn from(_: &str) -> FileRef {
+        todo!()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn from(path: &str) -> FileRef {
+        FileRef::from(make_absolute(path))
+    }
+}
+
 impl From<PathBuf> for FileRef {
     #[cfg(target_arch = "wasm32")]
     fn from(_: PathBuf) -> FileRef {
@@ -127,7 +143,8 @@ impl From<PathBuf> for FileRef {
     fn from(path: PathBuf) -> FileRef {
         FileRef(Arc::new(FileRefInner {
             rel: make_relative(&path),
-            url: lsp_types::Url::from_file_path(&path).ok(),
+            url: lsp_types::Url::from_file_path(std::fs::canonicalize(&path).expect("Bad path"))
+                .ok(),
             path,
         }))
     }

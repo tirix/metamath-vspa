@@ -56,8 +56,8 @@ impl Vfs {
         }
     }
 
-    pub fn source(&self, file: &FileRef) -> FileContents {
-        self.0.ulock().get(file).unwrap().text.ulock().1.clone()
+    pub fn source(&self, file: FileRef) -> io::Result<FileContents> {
+        Ok(self.get_or_insert(file)?.1.text.ulock().1.clone())
     }
 
     pub fn open_virt(

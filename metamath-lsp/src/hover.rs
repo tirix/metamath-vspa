@@ -76,7 +76,7 @@ pub(crate) fn hover(
     vfs: &Vfs,
     db: Database,
 ) -> Result<Option<Hover>, ServerError> {
-    let text = vfs.source(&path);
+    let text = vfs.source(path)?;
     let (word, range) = word_at(pos, text);
     if let Some(stmt) = db.clone().statement(word.as_bytes()) {
         Ok(Some(Hover {
