@@ -1,4 +1,5 @@
 [![Build Status](https://github.com/tirix/metamath-vspa/actions/workflows/ci.yml/badge.svg)](https://github.com/tirix/metamath-vspa/actions?query=workflow%3Aci)
+[![](https://shields.io/visual-studio-marketplace/v/tirix.metamath.svg?logo=visualstudiocode&color=brightgreen)]()
 
 # metamath-vspa
 A Visual Studio extension and LSP server for Metamath
