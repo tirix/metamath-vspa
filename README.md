@@ -20,7 +20,14 @@ cargo install --path metamath-vspa/metamath-lsp
 ```
 This shall compile and install the LSP server `mm-lsp-server` binary, accessible from your default path.
 
-Ultimately, the VSCode extension is also meant to be delivered on the Visual Studio Code marketplace. Until then, you can open it from Visual Studio Code itself:
+You can then install the Visual Studio Code extension. There are several possible ways for that:
+- in a web browser, from [the extension's Visual Studio Code Marketplace web page](https://marketplace.visualstudio.com/items?itemName=tirix.metamath), press the green "install" button,
+- in Visual Studio Code, from the View/Extensions menu, search for *Metamath* "A Metamath proof assistant" (`tirix.metamath`), and press the blue "install" button.
+- in Visual Studio Code, use Quick Open (Ctrl-P on Windows/Linux, Cmd-P on MacOS), paste `ext install tirix.metamath` in the box and hit Enter (Return). 
+
+## Contributing / Development
+
+It also possible to launch the extension from the source, using Visual Studio Code itself, for example if you wisth to modify it and contribute to the project:
 * Open the directory `metamath-vspa/metamath-vscode`
 * Install [node.js and npm](https://nodejs.org/en/download/)
 * Launch `npm install` to install pre-requisites
@@ -28,8 +35,10 @@ Ultimately, the VSCode extension is also meant to be delivered on the Visual Stu
 
 ## Features
 
-* Hovering over a label provides the statement information (hypotheses, assertion, associated comment)
-* The "Go to definition" command, when performed on a label, leads to the corresponding statement's definition.
+* Hovering over a label provides the statement information (hypotheses, assertion, associated comment),
+* The "Go to definition" command, when performed on a label, leads to the corresponding statement's definition,
+* The "Show Proof" context menu opens a theorem's proof in a new editor tab,
+* Diagnostics for the opened Metamath data
 
 Preview:
 
@@ -38,4 +47,4 @@ Preview:
 ## Acknowledgements
 
 - This server is based on Mario Carneiro's LSP server for MM0.
-- Its core functions are provided by the [metamath-knife](https://github.com/david-a-wheeler/metamath-knife) library.
+- Its core functions are provided by the [metamath-knife](https://github.com/david-a-wheeler/metamath-knife) library, initially by Stefan O'Rear.
