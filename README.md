@@ -12,7 +12,7 @@ The server is still in an early experimental state. It is usable but many advanc
 ### Installation
 
 Install [Visual Studio Code](https://code.visualstudio.com/), and install [rust](https://www.rust-lang.org/tools/install) if not already on your system.
-Then, intall the Metamath LSP server. Until `metamath-knife` and `metamath-vspa` are delivered as crate.io crates, this has to be done manually:
+Then, install the Metamath LSP server. Until `metamath-knife` and `metamath-vspa` are delivered as crate.io crates, this has to be done manually:
 ```
 git clone https://github.com/david-a-wheeler/metamath-knife.git
 git clone https://github.com/tirix/metamath-vspa.git
@@ -22,6 +22,8 @@ This shall compile and install the LSP server `mm-lsp-server` binary, accessible
 
 Ultimately, the VSCode extension is also meant to be delivered on the Visual Studio Code marketplace. Until then, you can open it from Visual Studio Code itself:
 * Open the directory `metamath-vspa/metamath-vscode`
+* Install [node.js and npm](https://nodejs.org/en/download/)
+* Launch `npm install` to install pre-requisites
 * Choose 'Run/Start Debugging' from the menu or hit the corresponding shortcut (F5)
 
 ## Features
