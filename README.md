@@ -25,6 +25,8 @@ You can then install the Visual Studio Code extension. There are several possibl
 - in Visual Studio Code, from the View/Extensions menu, search for *Metamath* "A Metamath proof assistant" (`tirix.metamath`), and press the blue "install" button.
 - in Visual Studio Code, use Quick Open (Ctrl-P on Windows/Linux, Cmd-P on MacOS), paste `ext install tirix.metamath` in the box and hit Enter (Return). 
 
+See also the [extension instructions](https://github.com/tirix/metamath-vspa/tree/master/metamath-vscode) for how to configure the extension and as a Metamath workspace.
+
 ## Contributing / Development
 
 It also possible to launch the extension from the source, using Visual Studio Code itself, for example if you wisth to modify it and contribute to the project:
