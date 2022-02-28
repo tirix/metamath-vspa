@@ -8,6 +8,9 @@
 		"type": "git",
 		"url": "https://github.com/tirix/metamath-vspa.git"
 	},
+	"bugs": {
+		"url": "https://github.com/tirix/metamath-vspa/issues"
+	},
 	"version": "0.0.1",
 	"license": "SEE LICENSE IN LICENSE",
 	"engines": {

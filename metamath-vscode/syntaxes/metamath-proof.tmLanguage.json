@@ -1,0 +1,60 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Metamath Proof",
+	"patterns": [
+		{
+			"include": "#firstline-expression"
+		},
+		{
+			"include": "#stepline-expression"
+		},
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#proof"
+		},
+		{
+			"include": "#lastline"
+		}
+	],
+	"repository": {
+		"firstline-expression": {
+			"name": "meta.header.metamath-proof",
+			"match": "(\\$\\() <MM> <PROOF_ASST> THEOREM=([a-zA-Z0-9\\-_\\.]+)  LOC_AFTER=([a-zA-Z0-9\\-_\\.]+|\\?)",
+			"captures": {
+				"1": { "name": "punctuation.definition.tag.metamath" },
+				"2": { "name": "entity.name.function.metamath" },
+				"3": { "name": "entity.name.function.metamath" }
+			}
+		},
+		"stepline-expression": {
+			"name": "meta.expression.metamath",
+			"begin": "^([a-zA-Z0-9\\-_\\.]+):([a-zA-Z0-9\\-_\\.,\\?]*):([a-zA-Z0-9\\-_\\.]*|\\?)\\s+",
+			"end": "(?=^[[:^space:]])",
+			"beginCaptures": {
+				"1": { "name": "entity.name.type.metamath" },
+				"2": { "name": "entity.name.type.metamath" },
+				"3": { "name": "entity.name.function.metamath" }
+			}
+		},
+		"comments": {
+			"name": "comment.line.metamath-proof",
+			"begin": "^\\*",
+			"end": "(?=^[[:^space:]])"
+		},
+		"proof": {
+			"name": "string.unquoted.proof.compressed.metamath",
+			"begin": "^(\\$=)",
+			"end": "(\\$\\.)",
+			"captures": {
+				"1": { "name": "punctuation.definition.tag.metamath" }
+			}
+		},
+		"lastline": {
+			"name": "punctuation.definition.tag.metamath",
+			"match": "^\\$\\)$"
+		}
+	},
+	"scopeName": "source.metamath-proof"
+}

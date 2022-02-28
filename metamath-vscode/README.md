@@ -24,7 +24,7 @@ This extension currently only provides the `metamath.executablePath` option in V
 When starting up, the extension will search for a file named `.metamath.json` at the root of the workspace directory, with parameters corresponding to the specific database to be loaded and used.
 
 Here is a sample Metamath workspace onfiguration file:
-```
+```json
 {
     "jobs": 8,
     "mainFile": "set.mm"

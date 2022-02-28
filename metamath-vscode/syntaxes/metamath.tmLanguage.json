@@ -12,8 +12,8 @@
 	"repository": {
 		"keywords": {
 			"patterns": [{
-				"name": "keyword.control.metamath",
-				"match": "\\$(a|c|e|f|p|v|\\.|{|}|=)"
+				"name": "punctuation.definition.tag.metamath",
+				"match": "\\$(a|c|d|e|f|p|v|\\.|{|}|=)"
 			}]
 		},
 		"comments": {
@@ -22,5 +22,5 @@
 			"end": "\\$\\)"
 		}
 	},
-	"scopeName": "text.metamath"
+	"scopeName": "source.metamath"
 }
