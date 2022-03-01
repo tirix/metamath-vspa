@@ -51,3 +51,4 @@ Preview:
 
 - This server is based on Mario Carneiro's LSP server for MM0.
 - Its core functions are provided by the [metamath-knife](https://github.com/david-a-wheeler/metamath-knife) library, initially by Stefan O'Rear.
+- Metamath syntax highlighting is based on Li Xuanji's work in [his vscode extension](https://github.com/ldct/metamath-syntax-highlighting).
