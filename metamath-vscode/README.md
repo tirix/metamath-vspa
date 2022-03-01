@@ -41,9 +41,13 @@ Calling out known issues can help limit users opening duplicate issues against y
 
 ## Release Notes
 
+### 0.0.2
+
+* Basic syntax highlighting for Metamath files and for Proof files
+* Fix dependency issue
+
 ### 0.0.1
 
 Initial release, 
 * LSP connection (provides definitions, hover, diagnostics)
 * Show proof functionality
-  
