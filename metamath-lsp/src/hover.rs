@@ -1,5 +1,6 @@
 //! Provides hover information
 
+use crate::definition::find_statement;
 use crate::server::word_at;
 use crate::util::FileRef;
 use crate::vfs::Vfs;
@@ -13,7 +14,7 @@ use std::fmt::Write;
 
 fn comment_markup_format(
     stmt: StatementRef<'_>,
-    db: Database,
+    db: &Database,
 ) -> Result<MarkedString, ServerError> {
     let mut out = String::new();
     writeln!(out, "## {}", as_str(stmt.label()))?;
@@ -78,10 +79,10 @@ pub(crate) fn hover(
 ) -> Result<Option<Hover>, ServerError> {
     let text = vfs.source(path)?;
     let (word, range) = word_at(pos, text);
-    if let Some(stmt) = db.clone().statement(word.as_bytes()) {
+    if let Some(stmt) = find_statement(word.as_bytes(), &db) {
         Ok(Some(Hover {
             range: Some(range),
-            contents: HoverContents::Scalar(comment_markup_format(stmt, db)?),
+            contents: HoverContents::Scalar(comment_markup_format(stmt, &db)?),
         }))
     //    } else if let Some(token) = db.name_pass().lookup_symbol() {
     //
