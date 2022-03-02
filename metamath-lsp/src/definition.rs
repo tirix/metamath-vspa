@@ -24,13 +24,17 @@ pub(crate) fn find_statement<'a>(token: &'a [u8], db: &'a Database) -> Option<St
             StatementType::Constant | StatementType::Variable => {
                 // TODO - this could be provided as a utility by metamath-knife wihtout having to build a formula
                 let grammar = db.grammar_result();
-                if let Ok(formula) = grammar.parse_formula(&mut [symbol.atom].into_iter(), &grammar.typecodes(), nset) {
+                if let Ok(formula) = grammar.parse_formula(
+                    &mut [symbol.atom].into_iter(),
+                    &grammar.typecodes(),
+                    nset,
+                ) {
                     db.statement(nset.atom_name(formula.get_by_path(&[])?))
                 } else {
                     Some(stmt)
                 }
-            },
-            _ => Some(stmt)
+            }
+            _ => Some(stmt),
         }
     } else {
         None

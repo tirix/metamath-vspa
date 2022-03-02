@@ -26,7 +26,7 @@ fn comment_markup_format(
             .scope_result()
             .get(stmt.label())
             .ok_or_else(|| ServerError::from("Frame not found"))?
-            .as_ref(&db)
+            .as_ref(db)
             .essentials()
         {
             let hyp_stmt = db.statement_by_label(label).unwrap();
