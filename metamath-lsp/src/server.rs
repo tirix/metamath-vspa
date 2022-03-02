@@ -67,8 +67,8 @@ fn is_label_char(c: char) -> bool {
 }
 
 /// Attempts to find a word around the given position
-pub fn word_at(pos: Position, text: FileContents) -> (String, Range) {
-    let line = text.0.get_line(pos.line as usize).unwrap();
+pub fn word_at(pos: Position, source: FileContents) -> (String, Range) {
+    let line = source.text.get_line(pos.line as usize).unwrap();
     let mut start = 0;
     let mut end = line.len_chars() as u32;
     for (idx, ch) in line.chars().enumerate() {
