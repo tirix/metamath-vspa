@@ -222,11 +222,7 @@ impl Hash for FileRef {
 
 impl fmt::Display for FileRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = self
-            .0
-            .path
-            .file_name()
-            .unwrap_or(self.0.path.as_os_str());
+        let s = self.0.path.file_name().unwrap_or(self.0.path.as_os_str());
         s.to_str().expect("bad unicode in path").fmt(f)
     }
 }
