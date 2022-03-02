@@ -3,6 +3,7 @@
 
 use crate::util::FileRef;
 use crate::MutexExt;
+//use metamath_mmp::ProofWorksheet;
 use ropey::Rope;
 use std::collections::{hash_map::Entry, HashMap};
 use std::path::PathBuf;
@@ -10,7 +11,19 @@ use std::sync::{Arc, Mutex};
 use std::{fs, io};
 
 #[derive(Clone)]
-pub struct FileContents(pub Arc<Rope>);
+pub struct FileContents {
+    pub text: Arc<Rope>,
+    //    pub proof_worksheet: Option<ProofWorksheet>,
+}
+
+impl FileContents {
+    fn new(text: Rope) -> Self {
+        Self {
+            text: Arc::new(text),
+            //          proof_worksheet: ...
+        }
+    }
+}
 
 pub struct VirtualFile {
     /// File data, saved (some version) or unsaved (none)
@@ -22,13 +35,13 @@ impl VirtualFile {
         let file = fs::File::open(path)?;
         let text = Rope::from_reader(file)?;
         Ok(VirtualFile {
-            text: Mutex::new((version, FileContents(Arc::new(text)))),
+            text: Mutex::new((version, FileContents::new(text))),
         })
     }
 
     fn from_text(version: Option<i32>, text: String) -> VirtualFile {
         VirtualFile {
-            text: Mutex::new((version, FileContents(Arc::new(text.into())))),
+            text: Mutex::new((version, FileContents::new(text.into()))),
         }
     }
 }
