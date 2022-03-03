@@ -73,7 +73,7 @@
 			"properties": {
 				"metamath.executablePath": {
 					"type": "string",
-					"default": "metamath-lsp",
+					"default": "mm-lsp-server",
 					"description": "Path to the Metamath LSP server executable."
 				}
 			}
