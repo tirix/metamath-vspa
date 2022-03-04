@@ -221,9 +221,9 @@ impl Server {
                     ..Default::default()
                 }),
                 definition_provider: Some(OneOf::Left(true)),
-                document_symbol_provider: Some(OneOf::Left(true)),
+                // document_symbol_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
-                document_highlight_provider: Some(OneOf::Left(true)),
+                // document_highlight_provider: Some(OneOf::Left(true)),
                 ..Default::default()
             })?)?)?;
         Ok(())
