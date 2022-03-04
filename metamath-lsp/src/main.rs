@@ -3,6 +3,7 @@
 mod definition;
 mod diag;
 mod hover;
+mod references;
 mod server;
 mod show_proof;
 mod util;

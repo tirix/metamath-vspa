@@ -41,6 +41,18 @@ pub(crate) fn find_statement<'a>(token: &'a [u8], db: &'a Database) -> Option<St
     }
 }
 
+pub(crate) fn stmt_range(stmt: StatementRef<'_>, vfs: &Vfs, db: &Database) -> Option<Location> {
+    let path: PathBuf = db.statement_source_name(stmt.address()).into();
+    let source = vfs.source(path.clone().into()).ok()?;
+    let uri = Url::from_file_path(path.canonicalize().ok()?).ok()?;
+    let span = stmt.span();
+    let range = Range::new(
+        source.text.byte_to_lsp_position(span.start as usize),
+        source.text.byte_to_lsp_position(span.end as usize),
+    );
+    Some(Location { uri, range })
+}
+
 pub(crate) fn definition(
     path: FileRef,
     pos: Position,
@@ -50,15 +62,7 @@ pub(crate) fn definition(
     let text = vfs.source(path)?;
     let (word, _) = word_at(pos, text);
     if let Some(stmt) = find_statement(word.as_bytes(), &db) {
-        let path: PathBuf = db.statement_source_name(stmt.address()).into();
-        let source = vfs.source(path.clone().into())?;
-        let uri = Url::from_file_path(path.canonicalize()?)?;
-        let span = stmt.span();
-        let range = Range::new(
-            source.text.byte_to_lsp_position(span.start as usize),
-            source.text.byte_to_lsp_position(span.end as usize),
-        );
-        Ok(Some(Location { uri, range }))
+        Ok(stmt_range(stmt, vfs, &db))
     } else {
         Ok(None)
     }

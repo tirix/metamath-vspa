@@ -20,7 +20,7 @@ impl FileContents {
     fn new(text: Rope) -> Self {
         Self {
             text: Arc::new(text),
-            //          proof_worksheet: ...
+            // proof_worksheet: None,
         }
     }
 }

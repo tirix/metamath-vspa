@@ -4,6 +4,7 @@
 use crate::definition::definition;
 use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
+use crate::references::references;
 use crate::show_proof::show_proof;
 use crate::vfs::FileContents;
 use crate::vfs::Vfs;
@@ -133,6 +134,19 @@ impl RequestHandler {
                 position,
             }) => self.response(definition(doc.uri.into(), position, vfs, db)),
             RequestType::ShowProof(label) => self.response(show_proof(label, vfs, db)),
+            RequestType::References(ReferenceParams {
+                text_document_position:
+                    TextDocumentPositionParams {
+                        text_document: doc,
+                        position,
+                    },
+                work_done_progress_params: _,
+                partial_result_params: _,
+                context:
+                    ReferenceContext {
+                        include_declaration: _,
+                    },
+            }) => self.response(references(doc.uri.into(), position, vfs, db)),
             _ => self.response_err(ErrorCode::MethodNotFound, "Not implemented"),
         }
     }
