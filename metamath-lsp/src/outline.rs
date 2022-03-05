@@ -1,6 +1,7 @@
 //! Provides the database outline : chapters and sections
 
-// use crate::definition::stmt_range;
+use crate::definition::span_range;
+use crate::definition::stmt_range;
 use crate::vfs::Vfs;
 use crate::ServerError;
 use lsp_types::*;
@@ -13,18 +14,12 @@ use metamath_knife::Database;
 fn document_symbol(
     node: OutlineNodeRef,
     include_statements: bool,
-    _vfs: &Vfs,
-    _db: &Database,
+    vfs: &Vfs,
+    db: &Database,
 ) -> Option<DocumentSymbol> {
-    // let stmt = match node {
-    //     OutlineNodeRef::Chapter { node_id, .. } => {
-    //         let sadd = db.outline_result().tree.get(node_id).stmt_address;
-    //         db.statement_by_address(sadd)
-    //     },
-    //     OutlineNodeRef::Statement { sref, .. } => sref
-    // };
-    // let range = stmt_range(stmt, vfs, db)?;
-    let range = Range::new(Position::new(0, 0), Position::new(0, 0));
+    let stmt = node.get_statement();
+    let range = span_range(stmt, node.get_span(), vfs, db)?;
+    let selection_range = stmt_range(stmt, vfs, db)?;
     Some(DocumentSymbol {
         name: node.get_name().to_string(),
         detail: None,
@@ -33,14 +28,14 @@ fn document_symbol(
             HeadingLevel::MajorPart => SymbolKind::MODULE,
             HeadingLevel::Section => SymbolKind::NAMESPACE,
             HeadingLevel::SubSection => SymbolKind::PACKAGE,
-            HeadingLevel::SubSubSection => SymbolKind::CLASS,
+            HeadingLevel::SubSubSection => SymbolKind::OBJECT,
             HeadingLevel::Statement => SymbolKind::METHOD,
         },
         tags: None,
         deprecated: None,
         range,
-        selection_range: range,
-        children: Some(children_symbols(node, include_statements, _vfs, _db)),
+        selection_range,
+        children: Some(children_symbols(node, include_statements, vfs, db)),
     })
 }
 
