@@ -1,7 +1,7 @@
 //! Provides references to a given statement
 
 use crate::definition::find_statement;
-use crate::definition::stmt_range;
+use crate::definition::stmt_location;
 use crate::server::word_at;
 use crate::util::FileRef;
 use crate::vfs::Vfs;
@@ -26,7 +26,7 @@ pub(crate) fn references(
         for stmt in db.statements_range_address((Bound::Excluded(stmt.address()), Bound::Unbounded))
         {
             if is_direct_use(&stmt, label) {
-                if let Some(location) = stmt_range(stmt, vfs, &db) {
+                if let Some(location) = stmt_location(stmt, vfs, &db) {
                     locations.push(location);
                 }
             }
