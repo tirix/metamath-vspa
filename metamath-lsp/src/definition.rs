@@ -46,7 +46,12 @@ pub(crate) fn stmt_range(stmt: StatementRef<'_>, vfs: &Vfs, db: &Database) -> Op
     span_range(stmt, stmt.span(), vfs, db)
 }
 
-pub(crate) fn span_range(stmt: StatementRef<'_>, span: Span, vfs: &Vfs, db: &Database) -> Option<Range> {
+pub(crate) fn span_range(
+    stmt: StatementRef<'_>,
+    span: Span,
+    vfs: &Vfs,
+    db: &Database,
+) -> Option<Range> {
     let path: PathBuf = db.statement_source_name(stmt.address()).into();
     let source = vfs.source(path.into()).ok()?;
     Some(Range::new(
