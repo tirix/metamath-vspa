@@ -7,6 +7,7 @@ use crate::ServerError;
 use lsp_text::RopeExt;
 use lsp_types::*;
 use metamath_knife::Database;
+use metamath_knife::Span;
 use metamath_knife::StatementRef;
 use metamath_knife::StatementType;
 use std::path::PathBuf;
@@ -42,9 +43,17 @@ pub(crate) fn find_statement<'a>(token: &'a [u8], db: &'a Database) -> Option<St
 }
 
 pub(crate) fn stmt_range(stmt: StatementRef<'_>, vfs: &Vfs, db: &Database) -> Option<Range> {
+    span_range(stmt, stmt.span(), vfs, db)
+}
+
+pub(crate) fn span_range(
+    stmt: StatementRef<'_>,
+    span: Span,
+    vfs: &Vfs,
+    db: &Database,
+) -> Option<Range> {
     let path: PathBuf = db.statement_source_name(stmt.address()).into();
     let source = vfs.source(path.into()).ok()?;
-    let span = stmt.span();
     Some(Range::new(
         source.text.byte_to_lsp_position(span.start as usize),
         source.text.byte_to_lsp_position(span.end as usize),
