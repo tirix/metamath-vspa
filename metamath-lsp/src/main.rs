@@ -3,6 +3,7 @@
 mod definition;
 mod diag;
 mod hover;
+mod outline;
 mod references;
 mod server;
 mod show_proof;
@@ -117,6 +118,22 @@ impl CondvarExt for std::sync::Condvar {
     }
 }
 
+// fn setup_log(debug: bool) {
+//     let level = if  {
+//         LevelFilter::Debug
+//     } else {
+//         LevelFilter::Info
+//     };
+//     use {
+//         simplelog::{Config, WriteLogger},
+//         std::fs::File,
+//     };
+//     std::env::set_var("RUST_BACKTRACE", "1");
+//     if let Ok(f) = File::create("lsp.log") {
+//         let _ = WriteLogger::init(level, Config::default(), f);
+//     }
+// }
+
 /// Main entry point for the Metamath language server.
 ///
 /// This function sets up an [LSP] connection using stdin and stdout.
@@ -157,19 +174,7 @@ pub fn main() {
                 .validator(positive_integer),
         )
         .get_matches();
-    let level = if matches.is_present("debug") {
-        LevelFilter::Debug
-    } else {
-        LevelFilter::Info
-    };
-    use {
-        simplelog::{Config, WriteLogger},
-        std::fs::File,
-    };
-    std::env::set_var("RUST_BACKTRACE", "1");
-    if let Ok(f) = File::create("lsp.log") {
-        let _ = WriteLogger::init(level, Config::default(), f);
-    }
+    // setup_log(matches.is_present("debug"));
     let db_file_name = matches.value_of("database").unwrap_or("None");
     let job_count = usize::from_str(matches.value_of("jobs").unwrap_or("1"))
         .expect("validator should check this");

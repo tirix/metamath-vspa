@@ -4,6 +4,7 @@
 use crate::definition::definition;
 use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
+use crate::outline::outline;
 use crate::references::references;
 use crate::show_proof::show_proof;
 use crate::vfs::FileContents;
@@ -147,6 +148,9 @@ impl RequestHandler {
                         include_declaration: _,
                     },
             }) => self.response(references(doc.uri.into(), position, vfs, db)),
+            RequestType::DocumentSymbol(DocumentSymbolParams { .. }) => {
+                self.response(outline(vfs, &db))
+            }
             _ => self.response_err(ErrorCode::MethodNotFound, "Not implemented"),
         }
     }
@@ -192,6 +196,7 @@ impl Server {
         db.parse(file_name.into(), Vec::new());
         db.name_pass();
         db.scope_pass();
+        db.outline_pass();
         db.stmt_parse_pass();
         let mm_diags = db.diag_notations(&[
             DiagnosticClass::Parse,
@@ -221,7 +226,7 @@ impl Server {
                     ..Default::default()
                 }),
                 definition_provider: Some(OneOf::Left(true)),
-                // document_symbol_provider: Some(OneOf::Left(true)),
+                document_symbol_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
                 // document_highlight_provider: Some(OneOf::Left(true)),
                 ..Default::default()
