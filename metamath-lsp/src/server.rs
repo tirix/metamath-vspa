@@ -57,8 +57,36 @@ fn parse_request(
     })
 }
 
+/// Bitmask of allowed whitespace characters.
+///
+/// A Metamath database is required to consist of graphic characters, SP, HT,
+/// NL, FF, and CR.
+const MM_VALID_SPACES: u64 =
+    (1u64 << 9) | (1u64 << 10) | (1u64 << 12) | (1u64 << 13) | (1u64 << 32);
+
+/// Check if a character which is known to be <= 32 is a valid Metamath
+/// whitespace.  May panic if out of range.
+const fn is_mm_space_c0(byte: u8) -> bool {
+    (MM_VALID_SPACES & (1u64 << byte)) != 0
+}
+
+/// Check if a character is valid Metamath whitespace.
+///
+/// We generally accept any C0 control as whitespace, with a diagnostic; this
+/// function only tests for fully legal whitespace though.
+const fn is_mm_space(byte: u8) -> bool {
+    byte <= 32 && is_mm_space_c0(byte)
+}
+
 #[inline]
-/// Whether a character can be part of a label
+/// Check whether a character can be part of a math token
+/// This method is used in the "hover" functionality, therefore it needs to isolate both math tokens and labels.
+/// The ':' character is excluded here because it is used as a separator in MMP files.
+fn is_token_char(c: char) -> bool {
+    !c.is_ascii() || (!is_mm_space(c as u8) && c != ':')
+}
+
+/// Check if a character can be part of a Metamath label.
 fn is_label_char(c: char) -> bool {
     c == '.'
         || c == '-'
@@ -77,7 +105,7 @@ pub fn word_at(pos: Position, source: FileContents) -> (String, Range) {
     let mut start = 0;
     let mut end = line.len_chars() as u32;
     for (idx, ch) in line.chars().enumerate() {
-        if !is_label_char(ch) {
+        if !is_token_char(ch) {
             if idx < pos.character as usize {
                 start = (idx + 1) as u32;
             } else {
