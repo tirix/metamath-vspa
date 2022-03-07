@@ -249,10 +249,10 @@ impl Server {
                     TextDocumentSyncKind::INCREMENTAL,
                 )),
                 hover_provider: Some(true.into()),
-                completion_provider: Some(CompletionOptions {
-                    resolve_provider: Some(true),
-                    ..Default::default()
-                }),
+                // completion_provider: Some(CompletionOptions {
+                //     resolve_provider: Some(true),
+                //     ..Default::default()
+                // }),
                 definition_provider: Some(OneOf::Left(true)),
                 document_symbol_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
