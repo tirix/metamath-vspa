@@ -17,7 +17,7 @@ metamath-knife = { git = "https://github.com/david-a-wheeler/metamath-knife", ta
 lsp-server = "0.5"
 lsp-types = "0.92"
 lsp-text = "0.3"
-ropey = "1.2"
+xi-rope = "0.3"
 crossbeam = "0.8"
 futures = { version = "0.3", features = ["thread-pool"] }
 annotate-snippets = "0.9"
@@ -27,7 +27,7 @@ serde_json = "1.0"
 serde_repr = "0.1"
 pathdiff = "0.2"
 lazy_static = "1.4"
-simplelog = "0.11"
+# simplelog = "0.11"
 log = "0.4"
 
 [[bin]]
