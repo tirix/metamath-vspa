@@ -1,10 +1,10 @@
 //! Provides hover information
 
+use crate::rope_ext::RopeExt;
 use crate::server::word_at;
 use crate::util::FileRef;
 use crate::vfs::Vfs;
 use crate::ServerError;
-use lsp_text::RopeExt;
 use lsp_types::*;
 use metamath_knife::Database;
 use metamath_knife::Span;
