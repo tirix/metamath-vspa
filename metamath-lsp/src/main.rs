@@ -5,6 +5,7 @@ mod diag;
 mod hover;
 mod outline;
 mod references;
+mod rope_ext;
 mod server;
 mod show_proof;
 mod util;

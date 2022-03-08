@@ -6,6 +6,7 @@ use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
 use crate::outline::outline;
 use crate::references::references;
+use crate::rope_ext::RopeExt;
 use crate::show_proof::show_proof;
 use crate::vfs::FileContents;
 use crate::vfs::Vfs;
@@ -98,12 +99,9 @@ fn is_label_char(c: char) -> bool {
 
 /// Attempts to find a word around the given position
 pub fn word_at(pos: Position, source: FileContents) -> (String, Range) {
-    let line = source
-        .text
-        .get_line(pos.line as usize)
-        .unwrap_or_else(|| source.text.slice(0..0));
+    let line = source.text.line(pos.line);
     let mut start = 0;
-    let mut end = line.len_chars() as u32;
+    let mut end = line.len() as u32;
     for (idx, ch) in line.chars().enumerate() {
         if !is_token_char(ch) {
             if idx < pos.character as usize {
@@ -115,9 +113,7 @@ pub fn word_at(pos: Position, source: FileContents) -> (String, Range) {
         }
     }
     (
-        line.get_slice(start as usize..end as usize)
-            .unwrap()
-            .to_string(),
+        line[start as usize..end as usize].to_string(),
         Range::new(Position::new(pos.line, start), Position::new(pos.line, end)),
     )
 }
