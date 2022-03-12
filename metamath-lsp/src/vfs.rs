@@ -35,7 +35,7 @@ pub struct VirtualFile {
 impl VirtualFile {
     fn from_path(version: Option<i32>, path: PathBuf) -> io::Result<VirtualFile> {
         let file = fs::File::open(path)?;
-        let text:Node<RopeInfo> = read_to_rope(file)?;
+        let text: Node<RopeInfo> = read_to_rope(file)?;
         Ok(VirtualFile {
             text: Mutex::new((version, FileContents::new(text))),
         })

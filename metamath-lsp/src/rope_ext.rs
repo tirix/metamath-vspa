@@ -1,13 +1,13 @@
 //! A collection of utilities for ropes.
 //! Takes care of reading Xi Ropes from files, adapting byte indices to LSP text positions, and providing lines
 use lsp_types::*;
-use xi_rope::interval::IntervalBounds;
-use xi_rope::tree::Node;
-use xi_rope::tree::NodeInfo;
 use std::borrow::Cow;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
 use xi_rope::engine::Error;
+use xi_rope::interval::IntervalBounds;
+use xi_rope::tree::Node;
+use xi_rope::tree::NodeInfo;
 use xi_rope::tree::TreeBuilder;
 use xi_rope::Cursor;
 use xi_rope::Interval;
@@ -25,10 +25,16 @@ impl StringTreeBuilder for TreeBuilder<RopeInfo> {
     }
 }
 
-pub trait RopeExt<I> where I: NodeInfo, TreeBuilder<I>: StringTreeBuilder {
+pub trait RopeExt<I>
+where
+    I: NodeInfo,
+    TreeBuilder<I>: StringTreeBuilder,
+{
     fn line_to_offset(&self, line_idx: usize) -> usize;
     fn offset_to_line(&self, byte_idx: usize) -> usize;
-    fn cow_for_range<T>(&self, range: T) -> Cow<str> where T: IntervalBounds;
+    fn cow_for_range<T>(&self, range: T) -> Cow<str>
+    where
+        T: IntervalBounds;
 
     fn byte_to_lsp_position(&self, byte_idx: usize) -> Position {
         let line_idx = self.offset_to_line(byte_idx);
@@ -72,7 +78,9 @@ pub trait RopeExt<I> where I: NodeInfo, TreeBuilder<I>: StringTreeBuilder {
 }
 
 pub fn read_to_rope<T: std::io::Read, I: NodeInfo>(mut reader: T) -> Result<Node<I>, IoError>
-    where TreeBuilder<I>: StringTreeBuilder {
+where
+    TreeBuilder<I>: StringTreeBuilder,
+{
     // Note: this method is based on Ropey's `from_reader`, adapted to Xi ropes
     const BUFFER_SIZE: usize = 4096;
     let mut builder = TreeBuilder::new();
@@ -145,7 +153,9 @@ impl RopeExt<RopeInfo> for Rope {
     }
 
     fn cow_for_range<T>(&self, range: T) -> Cow<str>
-        where T: IntervalBounds {
+    where
+        T: IntervalBounds,
+    {
         self.slice_to_cow(range)
     }
 

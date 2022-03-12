@@ -177,7 +177,7 @@ pub fn main() {
         .arg(
             Arg::with_name("worksheet")
                 .help("Loads a worksheet and exits")
-                .required(false)
+                .required(false),
         )
         .get_matches();
     // setup_log(matches.is_present("debug"));
