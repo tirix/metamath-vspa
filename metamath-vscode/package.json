@@ -12,6 +12,7 @@
 		"url": "https://github.com/tirix/metamath-vspa/issues"
 	},
 	"version": "0.0.2",
+	"preview": true,
 	"license": "SEE LICENSE IN LICENSE",
 	"engines": {
 		"vscode": "^1.54.0"
@@ -144,6 +145,6 @@
 		"id": "137aa346-d69a-4fcf-af2d-94d7dd5ed399",
 		"publisherDisplayName": "Thierry Arnoux",
 		"publisherId": "d9cefa37-84da-4d6e-91b3-5ff47ed83331",
-		"isPreReleaseVersion": false
+		"isPreReleaseVersion": true
 	}
 }
