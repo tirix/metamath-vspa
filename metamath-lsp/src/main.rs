@@ -174,6 +174,11 @@ pub fn main() {
                 .takes_value(true)
                 .validator(positive_integer),
         )
+        .arg(
+            Arg::with_name("worksheet")
+                .help("Loads a worksheet and exits")
+                .required(false)
+        )
         .get_matches();
     // setup_log(matches.is_present("debug"));
     let db_file_name = matches.value_of("database").unwrap_or("None");
@@ -186,6 +191,17 @@ pub fn main() {
         jobs: job_count,
         ..Default::default()
     };
+    // if let Some(proof_file_name) = matches.value_of("worksheet") {
+    //     let mut db = metamath_knife::Database::new(options);
+    //     db.parse(db_file_name.into(), Vec::new());
+    //     db.name_pass();
+    //     db.scope_pass();
+    //     db.outline_pass();
+    //     db.stmt_parse_pass();
+    //     let worksheet_file = std::fs::File::open(proof_file_name).expect("Could not open proof file");
+    //     let _worksheet = crate::proof::ProofWorksheet::from_reader(db, worksheet_file);
+    //     std::process::exit(1);
+    // }
     SERVER.init(options, db_file_name);
 
     info!("Starting server");

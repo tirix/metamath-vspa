@@ -1,7 +1,7 @@
 //! Virtual File System
 //! Keeps track of the files opened, and their current in-memory state
 
-use crate::rope_ext::RopeExt;
+use crate::rope_ext::read_to_rope;
 use crate::util::FileRef;
 use crate::MutexExt;
 //use metamath_mmp::ProofWorksheet;
@@ -9,7 +9,8 @@ use std::collections::{hash_map::Entry, HashMap};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::{fs, io};
-use xi_rope::Rope;
+use xi_rope::tree::Node;
+use xi_rope::{Rope, RopeInfo};
 
 #[derive(Clone)]
 pub struct FileContents {
@@ -34,7 +35,7 @@ pub struct VirtualFile {
 impl VirtualFile {
     fn from_path(version: Option<i32>, path: PathBuf) -> io::Result<VirtualFile> {
         let file = fs::File::open(path)?;
-        let text = RopeExt::from_reader(file)?;
+        let text:Node<RopeInfo> = read_to_rope(file)?;
         Ok(VirtualFile {
             text: Mutex::new((version, FileContents::new(text))),
         })

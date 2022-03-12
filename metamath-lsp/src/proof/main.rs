@@ -1,11 +1,12 @@
-mod worksheet;
+mod rope;
+mod step;
 
 use crate::worksheet::ProofWorksheet;
+use crate::rope::Rope;
 use clap::{arg, command};
 use log::*;
 use metamath_knife::database::DbOptions;
 use metamath_knife::Database;
-use ropey::Rope;
 use simple_logger::SimpleLogger;
 use std::fs::File;
 use std::str::FromStr;

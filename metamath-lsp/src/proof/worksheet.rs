@@ -1,38 +1,20 @@
+use crate::proof::step::Step;
 use lazy_static::lazy_static;
 use log::*;
 use metamath_knife::diag::Diagnostic;
-use metamath_knife::formula::Formula;
-use metamath_knife::formula::Label;
 use metamath_knife::statement::as_str;
 use metamath_knife::statement::StatementAddress;
 use metamath_knife::statement::StatementRef;
 use metamath_knife::Database;
-use metamath_knife::tree::Tree;
-use metamath_knife::tree::NodeId;
 use regex::Regex;
-use ropey::Rope;
-use ropey::RopeSlice;
 use std::collections::HashMap;
 use std::io::Write;
 use std::ops::Range;
 use std::sync::Arc;
 
-/// The type of the step: hypothesis, normal proof step of QED step.
-enum StepType {
-    Hyp,
-    Step,
-    Qed,
-}
+use super::ProofRope;
 
-struct Step {
-    name: String,
-    step_type: StepType,
-    lines: Range<usize>,
-    hyps: Vec<Option<String>>,
-    label: Option<Label>,
-    formula: Option<Formula>,
-}
-
+#[derive(Default)]
 /// A Position information within the proof file
 pub struct Span {
     pub line_start: usize,
@@ -42,7 +24,7 @@ pub struct Span {
 }
 
 impl Span {
-    fn new(line_start: usize, col_start: usize, slice: RopeSlice) -> Self {
+    fn new(line_start: usize, col_start: usize, source: ProofRope) -> Self {
         let len_lines = slice.len_lines();
         Span {
             line_start,
@@ -62,29 +44,21 @@ pub enum Diag {
 
 #[derive(Default, Clone)]
 pub struct ProofWorksheet {
-    source: Rope,
+    source: ProofRope,
     db: Database,
     diags: Arc<HashMap<usize, Vec<Diag>>>,
     sadd: Option<StatementAddress>,
     loc_after: Option<StatementAddress>,
-    steps: Arc<Tree<Step>>,
-    steps_by_name: Arc<HashMap<String, NodeId>>,
-    steps_by_line: Arc<HashMap<usize, String>>,
-}
-
-/// Checks whether the line is a follow-up of the previous line
-/// A line starting with a space to tab shall simply be concatenated with the previous one
-#[inline]
-fn is_followup_line(source: &Rope, line_idx: usize) -> bool {
-    matches!(
-        source.char(source.line_to_char(line_idx)),
-        ' ' | '\t' | '\n'
-    )
+    steps_by_name: Arc<HashMap<String, Step>>,
 }
 
 impl ProofWorksheet {
+    pub fn from_reader<T: std::io::Read>(db: Database, file: T) -> Self {
+        Self::new(db, &ProofRope::from_reader(file).expect("Could not open workseet file"))
+    }
+
     /// Creates a new proof worksheet with the given source text
-    pub fn new(db: Database, source: &Rope) -> Self {
+    fn new(db: Database, source: &ProofRope) -> Self {
         let mut worksheet = ProofWorksheet {
             source: source.clone(),
             db,
