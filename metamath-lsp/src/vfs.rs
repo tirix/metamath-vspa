@@ -48,7 +48,7 @@ pub struct VirtualFile {
 
 impl VirtualFile {
     fn from_path(version: Option<i32>, path: PathBuf, db: &Database) -> io::Result<VirtualFile> {
-        let contents = match path.extension().map(std::ffi::OsStr::to_str).flatten() {
+        let contents = match path.extension().and_then(std::ffi::OsStr::to_str) {
             Some("mm") => {
                 info!("Opening MM file {:?}", path.as_os_str());
                 let file = fs::File::open(path)?;
