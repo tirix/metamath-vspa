@@ -4,6 +4,7 @@ mod definition;
 mod diag;
 mod hover;
 mod outline;
+mod proof;
 mod references;
 mod rope_ext;
 mod server;
@@ -119,21 +120,21 @@ impl CondvarExt for std::sync::Condvar {
     }
 }
 
-// fn setup_log(debug: bool) {
-//     let level = if  {
-//         LevelFilter::Debug
-//     } else {
-//         LevelFilter::Info
-//     };
-//     use {
-//         simplelog::{Config, WriteLogger},
-//         std::fs::File,
-//     };
-//     std::env::set_var("RUST_BACKTRACE", "1");
-//     if let Ok(f) = File::create("lsp.log") {
-//         let _ = WriteLogger::init(level, Config::default(), f);
-//     }
-// }
+fn setup_log(debug: bool) {
+    let level = if debug {
+        LevelFilter::Debug
+    } else {
+        LevelFilter::Info
+    };
+    use {
+        simplelog::{Config, WriteLogger},
+        std::fs::File,
+    };
+    std::env::set_var("RUST_BACKTRACE", "1");
+    if let Ok(f) = File::create("lsp.log") {
+        let _ = WriteLogger::init(level, Config::default(), f);
+    }
+}
 
 /// Main entry point for the Metamath language server.
 ///
@@ -180,7 +181,6 @@ pub fn main() {
                 .required(false),
         )
         .get_matches();
-    // setup_log(matches.is_present("debug"));
     let db_file_name = matches.value_of("database").unwrap_or("None");
     let job_count = usize::from_str(matches.value_of("jobs").unwrap_or("1"))
         .expect("validator should check this");
@@ -191,18 +191,21 @@ pub fn main() {
         jobs: job_count,
         ..Default::default()
     };
-    // if let Some(proof_file_name) = matches.value_of("worksheet") {
-    //     let mut db = metamath_knife::Database::new(options);
-    //     db.parse(db_file_name.into(), Vec::new());
-    //     db.name_pass();
-    //     db.scope_pass();
-    //     db.outline_pass();
-    //     db.stmt_parse_pass();
-    //     let worksheet_file = std::fs::File::open(proof_file_name).expect("Could not open proof file");
-    //     let _worksheet = crate::proof::ProofWorksheet::from_reader(db, worksheet_file);
-    //     std::process::exit(1);
-    // }
+    if let Some(proof_file_name) = matches.value_of("worksheet") {
+        let mut db = metamath_knife::Database::new(options);
+        db.parse(db_file_name.into(), Vec::new());
+        db.name_pass();
+        db.scope_pass();
+        db.outline_pass();
+        db.stmt_parse_pass();
+        let worksheet_file =
+            std::fs::File::open(proof_file_name).expect("Could not open proof file");
+        let _worksheet = crate::proof::ProofWorksheet::from_reader(worksheet_file, &db);
+        println!("Successfully loaded worksheet.");
+        std::process::exit(1);
+    }
     SERVER.init(options, db_file_name);
+    setup_log(matches.is_present("debug"));
 
     info!("Starting server");
     if let Err(e) = SERVER.start() {

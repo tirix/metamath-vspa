@@ -10,9 +10,9 @@ use xi_rope::tree::Node;
 use xi_rope::tree::NodeInfo;
 use xi_rope::tree::TreeBuilder;
 use xi_rope::Cursor;
+use xi_rope::Delta;
 use xi_rope::Interval;
 use xi_rope::Rope;
-use xi_rope::RopeDelta;
 use xi_rope::RopeInfo;
 
 pub trait StringTreeBuilder {
@@ -55,10 +55,11 @@ where
 
     fn cursor_to_lsp_position(&self, cursor: Cursor<I>) -> Result<Position, Error>;
     fn lsp_position_to_cursor(&self, position: Position) -> Result<Cursor<I>, Error>;
+    fn char_len(&self) -> usize;
     fn change_event_to_rope_delta(
         &self,
         change: &TextDocumentContentChangeEvent,
-    ) -> Result<RopeDelta, Error> {
+    ) -> Result<Delta<I>, Error> {
         let text = change.text.as_str();
         let text_bytes = text.as_bytes();
         let text_end_byte_idx = text_bytes.len();
@@ -72,8 +73,10 @@ where
             Interval::new(0, text_end_byte_idx)
         };
 
-        let new_text = Rope::from(text);
-        Ok(RopeDelta::simple_edit(interval, new_text, text.len()))
+        let mut b = TreeBuilder::new();
+        b.push_string(text);
+        let new_text: Node<I> = b.build();
+        Ok(Delta::simple_edit(interval, new_text, self.char_len()))
     }
 }
 
@@ -168,5 +171,9 @@ impl RopeExt<RopeInfo> for Rope {
 
     fn lsp_position_to_cursor(&self, _position: Position) -> Result<Cursor<RopeInfo>, Error> {
         todo!()
+    }
+
+    fn char_len(&self) -> usize {
+        self.len()
     }
 }
