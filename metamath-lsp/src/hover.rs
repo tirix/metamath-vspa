@@ -77,7 +77,7 @@ pub(crate) fn hover(
     vfs: &Vfs,
     db: Database,
 ) -> Result<Option<Hover>, ServerError> {
-    let text = vfs.source(path)?;
+    let text = vfs.source(path, &db)?;
     let (word, range) = word_at(pos, text);
     if let Some(stmt) = find_statement(word.as_bytes(), &db) {
         Ok(Some(Hover {

@@ -6,7 +6,6 @@ use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
 use crate::outline::outline;
 use crate::references::references;
-use crate::rope_ext::RopeExt;
 use crate::show_proof::show_proof;
 use crate::vfs::FileContents;
 use crate::vfs::Vfs;
@@ -99,7 +98,7 @@ fn is_label_char(c: char) -> bool {
 
 /// Attempts to find a word around the given position
 pub fn word_at(pos: Position, source: FileContents) -> (String, Range) {
-    let line = source.text.line(pos.line);
+    let line = source.line(pos.line);
     let mut start = 0;
     let mut end = line.len() as u32;
     for (idx, ch) in line.chars().enumerate() {
@@ -213,6 +212,10 @@ impl Server {
             vfs: Vfs::default(),
             conn,
         }
+    }
+
+    fn get_database(&self) -> Database {
+        self.workspace.lock().unwrap().as_ref().unwrap().db.clone()
     }
 
     pub fn init(&self, options: DbOptions, file_name: &str) {
@@ -344,7 +347,7 @@ impl Server {
                             return Ok(true);
                         }
                         if let Some((id, req)) = parse_request(req)? {
-                            info!("Got request: {:?}", req);
+                            info!("Got request");
                             let handler = RequestHandler { id };
                             handler.handle(req)?;
                             // Job::RequestHandler(id, Some(Box::new(req))).spawn();
@@ -372,18 +375,26 @@ impl Server {
                         use lsp_types::notification::*;
                         match notif.method.as_str() {
                             DidOpenTextDocument::METHOD => {
+                                let db = self.get_database();
                                 let DidOpenTextDocumentParams { text_document: doc } =
                                     from_value(notif.params)?;
                                 let path = doc.uri.into();
                                 info!("open {:?}", path);
-                                let _vf = self.vfs.open_virt(path, doc.version, doc.text);
+                                let _vf = self.vfs.open_virt(path, doc.version, doc.text, db);
                             }
-                            // DidChangeTextDocument::METHOD => {
-                            //     let DidChangeTextDocumentParams {text_document: doc} = from_value(notif.params)?;
-                            //     let path = doc.uri.into();
-                            //     info!("open {:?}", path);
-                            //     self.vfs.open_virt(path, doc.version, doc.text);
-                            // },
+                            DidChangeTextDocument::METHOD => {
+                                let DidChangeTextDocumentParams {
+                                    text_document: doc,
+                                    content_changes,
+                                } = from_value(notif.params)?;
+                                if !content_changes.is_empty() {
+                                    let path = doc.uri.into();
+                                    info!("change {:?}", path);
+                                    let file =
+                                        self.vfs.get(&path).ok_or("changed nonexistent file")?;
+                                    file.apply_changes(doc.version, content_changes);
+                                }
+                            }
                             _ => {
                                 info!("Got notification: {:?}", notif);
                             }
