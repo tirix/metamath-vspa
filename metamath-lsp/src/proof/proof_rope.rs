@@ -32,8 +32,9 @@ impl ProofRope {
 
     /// Apply the given transformation to this proof
     pub fn apply(&self, delta: ProofDelta) -> Self {
-        log::debug!("Char count: {} / Line count: {} / Steps count: {}", 
-            self.0.measure::<BaseMetric>(), 
+        log::debug!(
+            "Char count: {} / Line count: {} / Steps count: {}",
+            self.0.measure::<BaseMetric>(),
             self.0.measure::<LinesMetric>(),
             self.0.measure::<StepsMetric>(),
         );
@@ -135,7 +136,7 @@ const MAX_LEAF: usize = 1024;
 
 /// This `StepsInfo` structure is used as nodes in the `ProofRope`.
 /// It stores both the number of lines and the number of step starts at each node.
-/// Note that in order to determine if a newline is a step start, 
+/// Note that in order to determine if a newline is a step start,
 /// one needs to consider the character right after the newline.
 /// If it is any kind of space, or a comment, this is not a step start.
 #[derive(Clone)]
@@ -155,7 +156,6 @@ impl NodeInfo for StepsInfo {
         self.lines += other.lines;
         self.step_starts += other.step_starts;
         self.ends_with_newline = other.ends_with_newline;
-        self.possible_step_start = self.possible_step_start;
         if self.ends_with_newline && other.possible_step_start {
             self.step_starts += 1;
         }
@@ -195,14 +195,9 @@ fn find_leaf_split(s: &str, minsplit: usize) -> usize {
     let splitpoint = min(MAX_LEAF, s.len() - MIN_LEAF);
     let bytes = s.as_bytes();
     let mut offset = minsplit;
-    loop {
-        if let Some(pos) = memrchr(b'\n', &bytes[offset..splitpoint]) {
-            offset += pos + 1;
-            if !is_followup_char(bytes[offset]) {
-                break;
-            }
-        }
-        else {
+    while let Some(pos) = memrchr(b'\n', &bytes[offset..splitpoint]) {
+        offset += pos + 1;
+        if !is_followup_char(bytes[offset]) {
             break;
         }
     }
@@ -224,14 +219,17 @@ impl StepsLeaf {
     }
 
     fn ends_with_newline(&self) -> bool {
-        self.text.len() == 0 || self.text.as_bytes()[self.text.as_bytes().len()-1] == b'\n'
-    }
-    
-    fn possible_step_start(&self) -> bool {
-        self.text.len() == 0 || !is_followup_char(self.text.as_bytes()[0])
+        self.text.is_empty() || self.text.as_bytes()[self.text.as_bytes().len() - 1] == b'\n'
     }
 
-    fn count_step_starts<R>(&self, range: R) -> usize where R: RangeBounds<usize> {
+    fn possible_step_start(&self) -> bool {
+        self.text.is_empty() || !is_followup_char(self.text.as_bytes()[0])
+    }
+
+    fn count_step_starts<R>(&self, range: R) -> usize
+    where
+        R: RangeBounds<usize>,
+    {
         let mut offset = match range.start_bound() {
             Bound::Included(start) => *start,
             Bound::Excluded(start) => *start - 1,
@@ -243,14 +241,13 @@ impl StepsLeaf {
             Bound::Unbounded => self.text.len(),
         };
         let mut count = 0;
-        loop {
-            match memchr(b'\n', &self.text.as_bytes()[offset..]) {
-                Some(pos) => {
-                    offset += pos + 1;
-                    if offset >= end { break; }
-                    if !is_followup_char(self.text.as_bytes()[offset]) { count += 1; }
-                },
-                _ => break,
+        while let Some(pos) = memchr(b'\n', &self.text.as_bytes()[offset..]) {
+            offset += pos + 1;
+            if offset >= end {
+                break;
+            }
+            if !is_followup_char(self.text.as_bytes()[offset]) {
+                count += 1;
             }
         }
         count
@@ -264,7 +261,7 @@ impl From<&str> for StepsLeaf {
         }
     }
 }
-        
+
 impl Leaf for StepsLeaf {
     fn len(&self) -> usize {
         self.text.len()
@@ -285,9 +282,7 @@ impl Leaf for StepsLeaf {
             let right_str = self.text[splitpoint..].to_owned();
             self.text.truncate(splitpoint);
             self.text.shrink_to_fit();
-            Some(StepsLeaf {
-                text: right_str,
-            })
+            Some(StepsLeaf { text: right_str })
         }
     }
 
@@ -304,9 +299,9 @@ impl std::fmt::Debug for StepsLeaf {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("leaf")
             .field("text", &self.text)
-            // .field("step_first_8_chars", 
+            // .field("step_first_8_chars",
             //     &self.step_starts.iter().map(|index| {
-            //         if *index > self.text.len() { 
+            //         if *index > self.text.len() {
             //             (*index, "outside of leaf!!!")
             //         } else {
             //             let end = if index+8 > self.text.len() { self.text.len() } else { index+8 };
@@ -314,7 +309,7 @@ impl std::fmt::Debug for StepsLeaf {
             //         }
             //     }).collect::<Vec<(usize, &str)>>()
             //  )
-        .finish()
+            .finish()
     }
 }
 
@@ -460,8 +455,7 @@ impl Metric<StepsInfo> for StepsMetric {
             // shouldn't be called with this, but be defensive
             false
         } else {
-            s.text.as_bytes()[offset - 1] == b'\n'
-            && !is_followup_char(s.text.as_bytes()[offset])
+            s.text.as_bytes()[offset - 1] == b'\n' && !is_followup_char(s.text.as_bytes()[offset])
         }
     }
 
@@ -472,9 +466,13 @@ impl Metric<StepsInfo> for StepsMetric {
             match memchr(b'\n', &s.text.as_bytes()[offset..]) {
                 Some(pos) => {
                     offset += pos + 1;
-                    if !is_followup_char(s.text.as_bytes()[offset]) { index += 1; }
-                    if index == in_measured_units { break; }
-                },
+                    if !is_followup_char(s.text.as_bytes()[offset]) {
+                        index += 1;
+                    }
+                    if index == in_measured_units {
+                        break;
+                    }
+                }
                 _ => panic!("to_base_units called with arg too large"),
             }
         }
@@ -490,7 +488,9 @@ impl Metric<StepsInfo> for StepsMetric {
         let pos = offset;
         loop {
             if let Some(pos) = memrchr(b'\n', &s.text.as_bytes()[..pos - 1]) {
-                if !is_followup_char(s.text.as_bytes()[pos + 1]) { break; }
+                if !is_followup_char(s.text.as_bytes()[pos + 1]) {
+                    break;
+                }
             } else {
                 return None;
             }
@@ -499,11 +499,16 @@ impl Metric<StepsInfo> for StepsMetric {
     }
 
     fn next(s: &StepsLeaf, offset: usize) -> Option<usize> {
-        debug_assert!(offset < s.len(), "caller is responsible for validating input");
+        debug_assert!(
+            offset < s.len(),
+            "caller is responsible for validating input"
+        );
         let pos = offset;
         loop {
             if let Some(pos) = memrchr(b'\n', &s.text.as_bytes()[pos..]) {
-                if !is_followup_char(s.text.as_bytes()[pos + 1]) { break; }
+                if !is_followup_char(s.text.as_bytes()[pos + 1]) {
+                    break;
+                }
             } else {
                 return None;
             }
@@ -515,7 +520,6 @@ impl Metric<StepsInfo> for StepsMetric {
         true
     }
 }
-
 
 impl StringTreeBuilder for TreeBuilder<StepsInfo> {
     /// Push a string on the accumulating tree in the naive way.
