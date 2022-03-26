@@ -1,13 +1,15 @@
 use crate::proof::step::Step;
-use lsp_types::{Position, TextDocumentContentChangeEvent};
-use metamath_knife::diag::Diagnostic;
+use lsp_types::{Position, Range as LspRange, TextDocumentContentChangeEvent,Diagnostic as LspDiagnostic, DiagnosticSeverity};
+use metamath_knife::diag::StmtParseError;
 use metamath_knife::statement::StatementAddress;
-use metamath_knife::Database;
+use metamath_knife::{Database, StatementRef};
+use regex::Regex;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::str::FromStr;
 use std::sync::Arc;
+use lazy_static::lazy_static;
 
 use super::proof_rope::ProofDelta;
 use super::ProofRope;
@@ -37,14 +39,48 @@ use crate::rope_ext::RopeExt;
 /// A Diagnostic
 pub enum Diag {
     UnknownStepLabel(Range<usize>),
+    UnknownTheoremLabel(Range<usize>),
     UnparseableFirstLine,
     UnparseableProofLine,
-    DatabaseDiagnostic(Diagnostic),
+    DatabaseDiagnostic(StmtParseError),
+    NotProvableStep,
+    NoFormula,
+    UnknownToken,
 }
 
-impl From<Diagnostic> for Diag {
-    fn from(d: Diagnostic) -> Self {
+impl From<StmtParseError> for Diag {
+    fn from(d: StmtParseError) -> Self {
         Self::DatabaseDiagnostic(d)
+    }
+}
+
+impl Diag {
+    fn message(&self) -> String {
+        match self {
+            Diag::UnknownStepLabel(_) => "Unknown step label".to_string(),
+            Diag::UnknownTheoremLabel(_) => "Unknown theorem".to_string(),
+            Diag::UnparseableFirstLine => "Could not parse first line".to_string(),
+            Diag::UnparseableProofLine => "Could not parse proof line".to_string(),
+            Diag::NotProvableStep => "Step formula does not start with the provable typecode".to_string(),
+            Diag::NoFormula => "No step formula found".to_string(),
+            Diag::UnknownToken => "Unknown math token".to_string(),
+            Diag::DatabaseDiagnostic(diag) => diag.label().to_string(),
+        }
+    }
+
+    fn severity(&self) -> Option<DiagnosticSeverity> {
+        Some(DiagnosticSeverity::ERROR)
+    }
+
+    fn get_range(&self, step_range: Range<usize>) -> Range<usize> {
+        match self {
+            Diag::UnknownStepLabel(range) | Diag::UnknownTheoremLabel(range) => Range { start: step_range.start + range.start, end: step_range.start + range.end },
+            Diag::UnparseableFirstLine | Diag::UnparseableProofLine | Diag::NotProvableStep | Diag::NoFormula => step_range,
+            Diag::UnknownToken => step_range,
+            Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementTooShort(span, _)) | Diag::DatabaseDiagnostic(StmtParseError::UnknownToken(span)) | Diag::DatabaseDiagnostic(StmtParseError::UnparseableStatement(span)) => Range { start: step_range.start + span.start as usize, end: step_range.start + span.end as usize },
+            Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementNoTypeCode) => step_range,
+            Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementWrongTypeCode(_)) => step_range,
+        }
     }
 }
 
@@ -62,6 +98,8 @@ pub struct ProofWorksheet {
     loc_after: Option<StatementAddress>,
     /// All the steps in this proof, referenced by their proof label (usually these are actually numbers, but any valid metamath label is allowed)
     pub(crate) steps_by_name: Arc<HashMap<String, Step>>,
+    /// Diagnostics
+    pub(crate) diags: Arc<Vec<(String, Diag)>>,
 }
 
 impl ProofWorksheet {
@@ -109,40 +147,87 @@ impl ProofWorksheet {
 
     /// Creates a new proof worksheet with the given source text
     fn new(db: &Database, source: &ProofRope) -> Self {
-        // TODO here: initialize steps
-        ProofWorksheet {
+        let mut worksheet = ProofWorksheet {
             source: source.clone(),
             db: db.clone(),
             ..Default::default()
+        };
+        let mut diags = vec![];
+        let mut steps_by_name = HashMap::new();
+        let mut steps_iter = source.steps_iter(..);
+        if steps_iter.next().is_none() || worksheet.update_first_line().is_none() {
+            diags.push(("".to_string(), Diag::UnparseableFirstLine));
         }
+
+        let mut steps_names = vec![];
+        for step_string in steps_iter {
+            log::info!("Found step: {}", step_string);
+            let (step, step_diags) = Step::from_str(&step_string, &db);
+            for (hyp_name, range) in step.hyps() {
+                if let Some(name) = hyp_name {
+                    if !steps_names.contains(name) {
+                        diags.push((step.name().to_string(), Diag::UnknownStepLabel(range.clone())));
+                    }
+                    steps_names.push(name.to_string());
+                }
+            }
+            for diag in step_diags {
+                diags.push((step.name().to_string(), diag));
+            }
+            steps_by_name.insert(step.name().to_string(), step);
+        }
+        worksheet.diags = Arc::new(diags);
+        worksheet.steps_by_name = Arc::new(steps_by_name);
+        worksheet
     }
 
-    // // First line has changed, update theorem name, loc_after
-    // fn update_first_line(&mut self) {
-    //     lazy_static! {
-    //         static ref FIRST_LINE: Regex = Regex::new(
-    //             r"^\$\( <MM> <PROOF_ASST> THEOREM=([0-9A-Za-z_\-\.]+)  LOC_AFTER=(\?|[0-9A-Za-z_\-\.]+)$",
-    //         ).unwrap();
-    //     }
-    //     match FIRST_LINE.captures(self.source.line(0).as_str().unwrap()) {
-    //         Some(caps) => {
-    //             let statement_name = caps.get(1).unwrap().as_str();
-    //             let loc_after_name = caps.get(2).unwrap().as_str();
-    //             self.sadd = self
-    //                 .db
-    //                 .statement(statement_name.as_bytes())
-    //                 .map(StatementRef::address);
-    //             self.loc_after = self
-    //                 .db
-    //                 .statement(loc_after_name.as_bytes())
-    //                 .map(StatementRef::address);
-    //         }
-    //         None => {
-    //             error!("Could not parse first line!");
-    //             self.diag(0, Diag::UnparseableFirstLine(Span::new(0, 0, self.source.line(0))));
-    //         }
-    //     }
-    // }
+    pub fn diagnostics(&self) -> Vec<LspDiagnostic> {
+        let mut diagnostics = vec![];
+        for (step_name, diag) in self.diags.iter() {
+            if let Some(_step) = self.steps_by_name.get(step_name) {
+                let range = diag.get_range(Range { start: 0, end: 100 });
+                diagnostics.push(LspDiagnostic {
+                    range: LspRange {
+                        start: self.byte_to_lsp_position(range.start),
+                        end: self.byte_to_lsp_position(range.end),
+                    }, 
+                    severity: diag.severity(), 
+                    code: None, 
+                    code_description: None, 
+                    source: None, 
+                    message: diag.message(), 
+                    related_information: None, 
+                    tags: None, 
+                    data: None, 
+                });
+            }
+        }
+        diagnostics
+    }
+
+
+    // First line has changed, update theorem name, loc_after
+    fn update_first_line(&mut self) -> Option<()> {
+        lazy_static! {
+            static ref FIRST_LINE: Regex = Regex::new(
+                r"^\$\( <MM> <PROOF_ASST> THEOREM=([0-9A-Za-z_\-\.]+)  LOC_AFTER=(\?|[0-9A-Za-z_\-\.]+)",
+            ).unwrap();
+        }
+        let first_line = &self.source.line(0);
+        log::info!("Found first line: {}", first_line);
+        FIRST_LINE.captures(first_line).map(|caps| {
+            let statement_name = caps.get(1).unwrap().as_str();
+            let loc_after_name = caps.get(2).unwrap().as_str();
+            self.sadd = self
+                .db
+                .statement(statement_name.as_bytes())
+                .map(StatementRef::address);
+            self.loc_after = self
+                .db
+                .statement(loc_after_name.as_bytes())
+                .map(StatementRef::address);
+        })
+    }
 
     // /// Update the internation representation of the proof, for the lines changed.
     // pub fn update(&mut self, mut line_nums: Range<usize>) {

@@ -1,9 +1,12 @@
 //! Representation of a Proof Step
+use std::ops::Range;
+use std::slice::Iter;
+
 use super::worksheet::Diag;
-use super::worksheet::ProofWorksheet;
 use lazy_static::lazy_static;
 use memchr::memchr;
-use metamath_knife::formula::Formula;
+use metamath_knife::Database;
+use metamath_knife::Formula;
 use metamath_knife::formula::Label;
 use regex::Regex;
 
@@ -19,59 +22,53 @@ enum StepType {
 
 /// A Proof Step.
 pub struct Step {
+    /// Start position of this step
+    //start: RopePosition<StepsInfo>,
+    /// End position of this step
+    //end: RopePosition<StepsInfo>,
     /// Label of this step
     name: String,
     /// Type of this step
     step_type: StepType,
     /// Hypotheses (`None` for the "?" hypothesis)
-    hyps: Vec<Option<String>>,
+    hyps: Vec<(Option<String>, Range<usize>)>,
     /// Label (`None` for the "?" label or no label)
     label: Option<Label>,
     /// The formula for this step (Or `None` if the formula could not be parsed)
     formula: Option<Formula>,
-    /// Errors and information in this worksheet
-    diags: Vec<Diag>,
 }
 
 impl Step {
-    fn from_str(s: &str, worksheet: ProofWorksheet) -> Self {
+    pub fn from_str(s: &'_ str, database: &Database) -> (Step, Vec<Diag>) {
         lazy_static! {
             static ref PROOF_LINE: Regex = Regex::new(
                 r"([0-9a-z]+):([\?|0-9a-z]*)(?:,?([\?|0-9a-z]+))*:(\?|[0-9A-Za-z_\-\.]+)[ \t\n]+(.+)",
-            ).unwrap();
+            ).expect("Malformed Regex");
         }
-        let nset = worksheet.db.name_result();
-        let grammar = worksheet.db.grammar_result();
+        let nset = database.name_result();
+        let grammar = database.grammar_result();
         let _provable = grammar.provable_typecode();
-        let logic = grammar.logic_typecode();
-        if let Some(caps) = PROOF_LINE.captures(s) {
-            let mut diags = vec![];
-            let step_name = caps.get(1).unwrap().as_str();
+        let mut diags = vec![];
+        let step = if let Some(caps) = PROOF_LINE.captures(s) {
+            let step_name = caps.get(1).expect("Regex did not return right number of captures").as_str();
             let mut hyps = vec![];
             for idx in 2..caps.len() - 3 {
-                let capture = caps.get(idx).unwrap();
+                let capture = caps.get(idx).expect("Regex did not return right number of captures");
                 let hyp_name = capture.as_str();
-                hyps.push(if hyp_name == "?" {
+                hyps.push((if hyp_name == "?" {
                     None
-                } else if worksheet.steps_by_name.get(hyp_name).is_some() {
-                    Some(hyp_name.to_string())
                 } else {
-                    diags.push(Diag::UnknownStepLabel(capture.range()));
-                    None
-                });
+                    Some(hyp_name.to_string())
+                },capture.range()));
             }
-            let label_name = caps.get(caps.len() - 2).unwrap().as_str();
-            let label = nset.lookup_label(label_name.as_bytes()).map(|l| l.atom);
-            let formula_string = caps.get(caps.len() - 1).unwrap().as_str();
-            // TODO use re.split and also ignore tabs and line feeds
-            let mut symbols = formula_string.trim().split(' ');
-            let _typecode = symbols.next();
-            // TODO - Check typecode is provable
-            let formula = match grammar.parse_formula(
-                &mut symbols.map(|t| nset.lookup_symbol(t.as_bytes()).unwrap().atom),
-                &[logic],
-                nset,
-            ) {
+            let capture = caps.get(caps.len() - 2).expect("Regex did not return right number of captures");
+            let label = nset.lookup_label(capture.as_str().as_bytes()).map(|l| l.atom);
+            if !label.is_some() {
+                diags.push(Diag::UnknownTheoremLabel(capture.range()));
+            }
+            let formula_string = caps.get(caps.len() - 1).expect("Regex did not return right number of captures").as_str();
+            // TODO check that the formula starts with the "provable" typecode token
+            let formula = match grammar.parse_string(formula_string, nset) {
                 Ok(formula) => Some(formula),
                 Err(diag) => {
                     diags.push(diag.into());
@@ -84,7 +81,6 @@ impl Step {
                 hyps,
                 label,
                 formula,
-                diags,
             }
         } else {
             let name = if let Some(offset) = memchr(b':', s.as_bytes()) {
@@ -92,14 +88,23 @@ impl Step {
             } else {
                 s
             };
+            diags.push(Diag::UnparseableProofLine);
             Step {
                 name: name.into(),
                 step_type: StepType::Step,
                 hyps: vec![],
                 label: None,
                 formula: None,
-                diags: vec![Diag::UnparseableProofLine],
             }
-        }
+        };
+        (step, diags)
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn hyps(&self) -> Iter<(Option<String>, Range<usize>)> {
+        self.hyps.iter()
     }
 }

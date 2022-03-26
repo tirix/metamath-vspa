@@ -7,6 +7,7 @@ use crate::rope_ext::RopeExt;
 use crate::util::FileRef;
 use crate::MutexExt;
 use log::*;
+use lsp_types::Diagnostic;
 use lsp_types::Position;
 use lsp_types::TextDocumentContentChangeEvent;
 use metamath_knife::Database;
@@ -69,13 +70,21 @@ impl VirtualFile {
         })
     }
 
-    fn from_text(version: Option<i32>, text: String, db: &Database) -> io::Result<VirtualFile> {
-        info!("Opening MMP file from text");
-        let contents = FileContents::MMPFile(
-            ProofWorksheet::from_string(&text, db)
-                .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?,
-        );
-        // let contents = FileContents::MM(text.into());
+    fn from_text(path: PathBuf, version: Option<i32>, text: String, db: &Database) -> io::Result<VirtualFile> {
+        let contents = match path.extension().and_then(std::ffi::OsStr::to_str) {
+            Some("mm") => {
+                info!("Opening MM file");
+                FileContents::MMFile(text.into())
+            },
+            Some("mmp") => {
+                info!("Opening MMP file {:?}", path.as_os_str());
+                FileContents::MMPFile(ProofWorksheet::from_string(&text, db)
+                    .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?)
+            },
+            _ => {
+                return Err(io::Error::new(ErrorKind::Unsupported, "Unknown extension"));
+            }
+        };
         Ok(VirtualFile {
             contents: Mutex::new((version, contents)),
         })
@@ -87,6 +96,14 @@ impl VirtualFile {
         match contents {
             FileContents::MMFile(_text) => {}
             FileContents::MMPFile(text) => text.apply_changes(changes),
+        }
+    }
+
+    pub fn diagnostics(&self) -> Option<(Option<i32>, Vec<Diagnostic>)> {
+        let (version, contents) = &*self.contents.ulock();
+        match contents {
+            FileContents::MMFile(_text) => None,
+            FileContents::MMPFile(text) => Some((*version, text.diagnostics())),
         }
     }
 }
@@ -129,7 +146,7 @@ impl Vfs {
         text: String,
         db: Database,
     ) -> io::Result<Arc<VirtualFile>> {
-        let file = Arc::new(VirtualFile::from_text(Some(version), text, &db)?);
+        let file = Arc::new(VirtualFile::from_text(path.path().to_path_buf(), Some(version), text, &db)?);
         let file = match self.0.ulock().entry(path) {
             Entry::Occupied(_entry) => file,
             Entry::Vacant(entry) => entry.insert(file).clone(),

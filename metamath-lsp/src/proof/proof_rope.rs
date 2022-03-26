@@ -9,6 +9,7 @@ use std::string::ParseError;
 use crate::rope_ext::{RopeExt, StringTreeBuilder};
 use lsp_types::TextDocumentContentChangeEvent;
 use memchr::{memchr, memrchr};
+use xi_rope::interval::IntervalBounds;
 use std::cmp::{max, min, Ordering};
 use xi_rope::engine::Error;
 use xi_rope::rope::count_newlines;
@@ -39,6 +40,25 @@ impl ProofRope {
             self.0.measure::<StepsMetric>(),
         );
         ProofRope(delta.0.apply(&self.0))
+    }
+
+    pub fn steps_iter<T: IntervalBounds>(&self, range: T) -> Steps {
+        Steps { inner: StepsRaw {
+            inner: self.iter_chunks(range),
+            fragment: "",
+        }}
+    }
+
+
+    /// Returns an iterator over chunks of the rope.
+    ///
+    /// Each chunk is a `&str` slice borrowed from the rope's storage. The size
+    /// of the chunks is indeterminate but for large strings will generally be
+    /// in the range of 511-1024 bytes.
+    fn iter_chunks<T: IntervalBounds>(&self, range: T) -> ChunkIter {
+        let Interval { start, end } = range.into_interval(self.0.len());
+
+        ChunkIter { cursor: Cursor::new(&self.0, start), end }
     }
 }
 
@@ -542,6 +562,101 @@ impl StringTreeBuilder for TreeBuilder<StepsInfo> {
             };
             self.push_leaf(s[..splitpoint].into());
             s = &s[splitpoint..];
+        }
+    }
+}
+
+// step iterators
+
+pub struct StepsRaw<'a> {
+    inner: ChunkIter<'a>,
+    fragment: &'a str,
+}
+
+fn cow_append<'a>(a: Cow<'a, str>, b: &'a str) -> Cow<'a, str> {
+    if a.is_empty() {
+        Cow::from(b)
+    } else {
+        Cow::from(a.into_owned() + b)
+    }
+}
+
+impl<'a> Iterator for StepsRaw<'a> {
+    type Item = Cow<'a, str>;
+
+    fn next(&mut self) -> Option<Cow<'a, str>> {
+        let mut result = Cow::from("");
+        let mut newline = false;
+        loop {
+            if self.fragment.is_empty() {
+                match self.inner.next() {
+                    Some(chunk) => self.fragment = chunk,
+                    None => return if result.is_empty() { None } else { Some(result) },
+                }
+                if self.fragment.is_empty() {
+                    // can only happen on empty input
+                    return None;
+                }
+            }
+
+            // Case where the previous fragment ended in a newline
+            if newline && !self.fragment.is_empty() && !is_followup_char(self.fragment.as_bytes()[0]) {
+                self.fragment = &self.fragment[1..];
+                return Some(result);
+            }
+            newline = false;
+            let mut offset = 0;
+            loop {
+                if let Some(pos) = memrchr(b'\n', &self.fragment.as_bytes()[offset..]) {
+                    offset += pos + 1;
+                    if offset >= self.fragment.as_bytes().len() {
+                        newline = true;
+                        result = cow_append(result, self.fragment);
+                        self.fragment = "";
+                        break;
+                    }
+                    if !is_followup_char(self.fragment.as_bytes()[offset]) {
+                        self.fragment = &self.fragment[pos + 1..];
+                        return Some(result);
+                    }
+                } else {
+                    result = cow_append(result, self.fragment);
+                    self.fragment = "";
+                    break;
+                }
+            }
+        }
+    }
+}
+
+pub struct Steps<'a> {
+    inner: StepsRaw<'a>,
+}
+
+impl<'a> Iterator for Steps<'a> {
+    type Item = Cow<'a, str>;
+
+    fn next(&mut self) -> Option<Cow<'a, str>> {
+        match self.inner.next() {
+            Some(Cow::Borrowed(mut s)) => {
+                if s.ends_with('\n') {
+                    s = &s[..s.len() - 1];
+                    if s.ends_with('\r') {
+                        s = &s[..s.len() - 1];
+                    }
+                }
+                Some(Cow::from(s))
+            }
+            Some(Cow::Owned(mut s)) => {
+                if s.ends_with('\n') {
+                    let _ = s.pop();
+                    if s.ends_with('\r') {
+                        let _ = s.pop();
+                    }
+                }
+                Some(Cow::from(s))
+            }
+            None => None,
         }
     }
 }

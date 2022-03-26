@@ -378,9 +378,13 @@ impl Server {
                                 let db = self.get_database();
                                 let DidOpenTextDocumentParams { text_document: doc } =
                                     from_value(notif.params)?;
-                                let path = doc.uri.into();
+                                let path = doc.uri.clone().into();
                                 info!("open {:?}", path);
-                                let _vf = self.vfs.open_virt(path, doc.version, doc.text, db);
+                                if let Ok(vf) = self.vfs.open_virt(path, doc.version, doc.text, db) {
+                                    if let Some((version, diagnotstics)) = vf.diagnostics() {
+                                        self.send_diagnostics(doc.uri, version, diagnotstics).ok();
+                                    }
+                                }
                             }
                             DidChangeTextDocument::METHOD => {
                                 let DidChangeTextDocumentParams {
