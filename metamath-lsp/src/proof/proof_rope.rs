@@ -9,9 +9,9 @@ use std::string::ParseError;
 use crate::rope_ext::{RopeExt, StringTreeBuilder};
 use lsp_types::TextDocumentContentChangeEvent;
 use memchr::{memchr, memrchr};
-use xi_rope::interval::IntervalBounds;
 use std::cmp::{max, min, Ordering};
 use xi_rope::engine::Error;
+use xi_rope::interval::IntervalBounds;
 use xi_rope::rope::count_newlines;
 use xi_rope::tree::Node;
 use xi_rope::tree::NodeInfo;
@@ -43,12 +43,13 @@ impl ProofRope {
     }
 
     pub fn steps_iter<T: IntervalBounds>(&self, range: T) -> Steps {
-        Steps { inner: StepsRaw {
-            inner: self.iter_chunks(range),
-            fragment: "",
-        }}
+        Steps {
+            inner: StepsRaw {
+                inner: self.iter_chunks(range),
+                fragment: "",
+            },
+        }
     }
-
 
     /// Returns an iterator over chunks of the rope.
     ///
@@ -58,7 +59,10 @@ impl ProofRope {
     fn iter_chunks<T: IntervalBounds>(&self, range: T) -> ChunkIter {
         let Interval { start, end } = range.into_interval(self.0.len());
 
-        ChunkIter { cursor: Cursor::new(&self.0, start), end }
+        ChunkIter {
+            cursor: Cursor::new(&self.0, start),
+            end,
+        }
     }
 }
 
@@ -591,7 +595,13 @@ impl<'a> Iterator for StepsRaw<'a> {
             if self.fragment.is_empty() {
                 match self.inner.next() {
                     Some(chunk) => self.fragment = chunk,
-                    None => return if result.is_empty() { None } else { Some(result) },
+                    None => {
+                        return if result.is_empty() {
+                            None
+                        } else {
+                            Some(result)
+                        }
+                    }
                 }
                 if self.fragment.is_empty() {
                     // can only happen on empty input
@@ -600,7 +610,10 @@ impl<'a> Iterator for StepsRaw<'a> {
             }
 
             // Case where the previous fragment ended in a newline
-            if newline && !self.fragment.is_empty() && !is_followup_char(self.fragment.as_bytes()[0]) {
+            if newline
+                && !self.fragment.is_empty()
+                && !is_followup_char(self.fragment.as_bytes()[0])
+            {
                 self.fragment = &self.fragment[1..];
                 return Some(result);
             }

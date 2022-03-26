@@ -5,9 +5,9 @@ use std::slice::Iter;
 use super::worksheet::Diag;
 use lazy_static::lazy_static;
 use memchr::memchr;
+use metamath_knife::formula::Label;
 use metamath_knife::Database;
 use metamath_knife::Formula;
-use metamath_knife::formula::Label;
 use regex::Regex;
 
 /// Identifies a proof step in a worksheet
@@ -50,23 +50,38 @@ impl Step {
         let _provable = grammar.provable_typecode();
         let mut diags = vec![];
         let step = if let Some(caps) = PROOF_LINE.captures(s) {
-            let step_name = caps.get(1).expect("Regex did not return right number of captures").as_str();
+            let step_name = caps
+                .get(1)
+                .expect("Regex did not return right number of captures")
+                .as_str();
             let mut hyps = vec![];
             for idx in 2..caps.len() - 3 {
-                let capture = caps.get(idx).expect("Regex did not return right number of captures");
+                let capture = caps
+                    .get(idx)
+                    .expect("Regex did not return right number of captures");
                 let hyp_name = capture.as_str();
-                hyps.push((if hyp_name == "?" {
-                    None
-                } else {
-                    Some(hyp_name.to_string())
-                },capture.range()));
+                hyps.push((
+                    if hyp_name == "?" {
+                        None
+                    } else {
+                        Some(hyp_name.to_string())
+                    },
+                    capture.range(),
+                ));
             }
-            let capture = caps.get(caps.len() - 2).expect("Regex did not return right number of captures");
-            let label = nset.lookup_label(capture.as_str().as_bytes()).map(|l| l.atom);
+            let capture = caps
+                .get(caps.len() - 2)
+                .expect("Regex did not return right number of captures");
+            let label = nset
+                .lookup_label(capture.as_str().as_bytes())
+                .map(|l| l.atom);
             if !label.is_some() {
                 diags.push(Diag::UnknownTheoremLabel(capture.range()));
             }
-            let formula_string = caps.get(caps.len() - 1).expect("Regex did not return right number of captures").as_str();
+            let formula_string = caps
+                .get(caps.len() - 1)
+                .expect("Regex did not return right number of captures")
+                .as_str();
             // TODO check that the formula starts with the "provable" typecode token
             let formula = match grammar.parse_string(formula_string, nset) {
                 Ok(formula) => Some(formula),

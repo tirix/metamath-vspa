@@ -380,7 +380,8 @@ impl Server {
                                     from_value(notif.params)?;
                                 let path = doc.uri.clone().into();
                                 info!("open {:?}", path);
-                                if let Ok(vf) = self.vfs.open_virt(path, doc.version, doc.text, db) {
+                                if let Ok(vf) = self.vfs.open_virt(path, doc.version, doc.text, db)
+                                {
                                     if let Some((version, diagnotstics)) = vf.diagnostics() {
                                         self.send_diagnostics(doc.uri, version, diagnotstics).ok();
                                     }

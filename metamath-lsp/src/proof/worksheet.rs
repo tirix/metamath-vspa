@@ -1,5 +1,9 @@
 use crate::proof::step::Step;
-use lsp_types::{Position, Range as LspRange, TextDocumentContentChangeEvent,Diagnostic as LspDiagnostic, DiagnosticSeverity};
+use lazy_static::lazy_static;
+use lsp_types::{
+    Diagnostic as LspDiagnostic, DiagnosticSeverity, Position, Range as LspRange,
+    TextDocumentContentChangeEvent,
+};
 use metamath_knife::diag::StmtParseError;
 use metamath_knife::statement::StatementAddress;
 use metamath_knife::{Database, StatementRef};
@@ -9,7 +13,6 @@ use std::collections::HashMap;
 use std::ops::Range;
 use std::str::FromStr;
 use std::sync::Arc;
-use lazy_static::lazy_static;
 
 use super::proof_rope::ProofDelta;
 use super::ProofRope;
@@ -61,7 +64,9 @@ impl Diag {
             Diag::UnknownTheoremLabel(_) => "Unknown theorem".to_string(),
             Diag::UnparseableFirstLine => "Could not parse first line".to_string(),
             Diag::UnparseableProofLine => "Could not parse proof line".to_string(),
-            Diag::NotProvableStep => "Step formula does not start with the provable typecode".to_string(),
+            Diag::NotProvableStep => {
+                "Step formula does not start with the provable typecode".to_string()
+            }
             Diag::NoFormula => "No step formula found".to_string(),
             Diag::UnknownToken => "Unknown math token".to_string(),
             Diag::DatabaseDiagnostic(diag) => diag.label().to_string(),
@@ -74,10 +79,21 @@ impl Diag {
 
     fn get_range(&self, step_range: Range<usize>) -> Range<usize> {
         match self {
-            Diag::UnknownStepLabel(range) | Diag::UnknownTheoremLabel(range) => Range { start: step_range.start + range.start, end: step_range.start + range.end },
-            Diag::UnparseableFirstLine | Diag::UnparseableProofLine | Diag::NotProvableStep | Diag::NoFormula => step_range,
+            Diag::UnknownStepLabel(range) | Diag::UnknownTheoremLabel(range) => Range {
+                start: step_range.start + range.start,
+                end: step_range.start + range.end,
+            },
+            Diag::UnparseableFirstLine
+            | Diag::UnparseableProofLine
+            | Diag::NotProvableStep
+            | Diag::NoFormula => step_range,
             Diag::UnknownToken => step_range,
-            Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementTooShort(span, _)) | Diag::DatabaseDiagnostic(StmtParseError::UnknownToken(span)) | Diag::DatabaseDiagnostic(StmtParseError::UnparseableStatement(span)) => Range { start: step_range.start + span.start as usize, end: step_range.start + span.end as usize },
+            Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementTooShort(span, _))
+            | Diag::DatabaseDiagnostic(StmtParseError::UnknownToken(span))
+            | Diag::DatabaseDiagnostic(StmtParseError::UnparseableStatement(span)) => Range {
+                start: step_range.start + span.start as usize,
+                end: step_range.start + span.end as usize,
+            },
             Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementNoTypeCode) => step_range,
             Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementWrongTypeCode(_)) => step_range,
         }
@@ -166,7 +182,10 @@ impl ProofWorksheet {
             for (hyp_name, range) in step.hyps() {
                 if let Some(name) = hyp_name {
                     if !steps_names.contains(name) {
-                        diags.push((step.name().to_string(), Diag::UnknownStepLabel(range.clone())));
+                        diags.push((
+                            step.name().to_string(),
+                            Diag::UnknownStepLabel(range.clone()),
+                        ));
                     }
                     steps_names.push(name.to_string());
                 }
@@ -190,21 +209,20 @@ impl ProofWorksheet {
                     range: LspRange {
                         start: self.byte_to_lsp_position(range.start),
                         end: self.byte_to_lsp_position(range.end),
-                    }, 
-                    severity: diag.severity(), 
-                    code: None, 
-                    code_description: None, 
-                    source: None, 
-                    message: diag.message(), 
-                    related_information: None, 
-                    tags: None, 
-                    data: None, 
+                    },
+                    severity: diag.severity(),
+                    code: None,
+                    code_description: None,
+                    source: None,
+                    message: diag.message(),
+                    related_information: None,
+                    tags: None,
+                    data: None,
                 });
             }
         }
         diagnostics
     }
-
 
     // First line has changed, update theorem name, loc_after
     fn update_first_line(&mut self) -> Option<()> {

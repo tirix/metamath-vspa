@@ -70,17 +70,24 @@ impl VirtualFile {
         })
     }
 
-    fn from_text(path: PathBuf, version: Option<i32>, text: String, db: &Database) -> io::Result<VirtualFile> {
+    fn from_text(
+        path: PathBuf,
+        version: Option<i32>,
+        text: String,
+        db: &Database,
+    ) -> io::Result<VirtualFile> {
         let contents = match path.extension().and_then(std::ffi::OsStr::to_str) {
             Some("mm") => {
                 info!("Opening MM file");
                 FileContents::MMFile(text.into())
-            },
+            }
             Some("mmp") => {
                 info!("Opening MMP file {:?}", path.as_os_str());
-                FileContents::MMPFile(ProofWorksheet::from_string(&text, db)
-                    .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?)
-            },
+                FileContents::MMPFile(
+                    ProofWorksheet::from_string(&text, db)
+                        .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?,
+                )
+            }
             _ => {
                 return Err(io::Error::new(ErrorKind::Unsupported, "Unknown extension"));
             }
@@ -146,7 +153,12 @@ impl Vfs {
         text: String,
         db: Database,
     ) -> io::Result<Arc<VirtualFile>> {
-        let file = Arc::new(VirtualFile::from_text(path.path().to_path_buf(), Some(version), text, &db)?);
+        let file = Arc::new(VirtualFile::from_text(
+            path.path().to_path_buf(),
+            Some(version),
+            text,
+            &db,
+        )?);
         let file = match self.0.ulock().entry(path) {
             Entry::Occupied(_entry) => file,
             Entry::Vacant(entry) => entry.insert(file).clone(),
