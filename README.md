@@ -45,7 +45,13 @@ It also possible to launch the extension from the source, using Visual Studio Co
 
 Preview:
 
+* Hover and go to definition:
+
 ![mm-vscode-1](https://user-images.githubusercontent.com/5831830/153800753-80e6af30-7a5e-4154-addb-39bd3ff1ae6f.gif)
+
+* Outline, problems and show proof:
+
+![mm-vscode-2](https://user-images.githubusercontent.com/5831830/160329806-9754a8e1-2876-48db-8a0e-632f26be0fdb.gif)
 
 ## Acknowledgements
 
