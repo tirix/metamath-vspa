@@ -56,9 +56,7 @@ fn parse_request(
         "textDocument/documentHighlight" => {
             Some((id, RequestType::DocumentHighlight(from_value(params)?)))
         }
-        "textDocument/inlayHint" => {
-            Some((id, RequestType::InlayHint(from_value(params)?)))
-        }
+        "textDocument/inlayHint" => Some((id, RequestType::InlayHint(from_value(params)?))),
         "metamath/showProof" => Some((id, RequestType::ShowProof(from_value(params)?))),
         _ => None,
     })
@@ -180,10 +178,12 @@ impl RequestHandler {
             }) => self.response(references(doc.uri.into(), position, vfs, db)),
             RequestType::DocumentSymbol(DocumentSymbolParams { .. }) => {
                 self.response(outline(vfs, &db))
-            },
-            RequestType::InlayHint(InlayHintParams { text_document: doc, range, .. }) => {
-                self.response(inlay_hints(doc.uri.into(), range, vfs, db))
-            },
+            }
+            RequestType::InlayHint(InlayHintParams {
+                text_document: doc,
+                range,
+                ..
+            }) => self.response(inlay_hints(doc.uri.into(), range, vfs, db)),
             _ => self.response_err(ErrorCode::MethodNotFound, "Not implemented"),
         }
     }

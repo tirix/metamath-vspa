@@ -3,11 +3,11 @@
 mod definition;
 mod diag;
 mod hover;
+mod inlay_hints;
 mod outline;
 mod references;
 mod rope_ext;
 mod server;
-mod inlay_hints;
 mod show_proof;
 mod util;
 mod vfs;
