@@ -4,6 +4,7 @@
 use crate::definition::definition;
 use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
+use crate::inlay_hints::inlay_hints;
 use crate::outline::outline;
 use crate::references::references;
 use crate::rope_ext::RopeExt;
@@ -35,12 +36,14 @@ enum RequestType {
     DocumentSymbol(DocumentSymbolParams),
     References(ReferenceParams),
     DocumentHighlight(DocumentHighlightParams),
+    InlayHint(InlayHintParams),
     ShowProof(String),
 }
 
 fn parse_request(
     Request { id, method, params }: Request,
 ) -> Result<Option<(RequestId, RequestType)>> {
+    SERVER.log_message(format!("Got request: {}", method)).ok();
     Ok(match method.as_str() {
         "textDocument/completion" => Some((id, RequestType::Completion(from_value(params)?))),
         "completionItem/resolve" => Some((id, RequestType::CompletionResolve(from_value(params)?))),
@@ -52,6 +55,9 @@ fn parse_request(
         "textDocument/references" => Some((id, RequestType::References(from_value(params)?))),
         "textDocument/documentHighlight" => {
             Some((id, RequestType::DocumentHighlight(from_value(params)?)))
+        }
+        "textDocument/inlayHint" => {
+            Some((id, RequestType::InlayHint(from_value(params)?)))
         }
         "metamath/showProof" => Some((id, RequestType::ShowProof(from_value(params)?))),
         _ => None,
@@ -174,7 +180,10 @@ impl RequestHandler {
             }) => self.response(references(doc.uri.into(), position, vfs, db)),
             RequestType::DocumentSymbol(DocumentSymbolParams { .. }) => {
                 self.response(outline(vfs, &db))
-            }
+            },
+            RequestType::InlayHint(InlayHintParams { text_document: doc, range, .. }) => {
+                self.response(inlay_hints(doc.uri.into(), range, vfs, db))
+            },
             _ => self.response_err(ErrorCode::MethodNotFound, "Not implemented"),
         }
     }
@@ -253,6 +262,7 @@ impl Server {
                 document_symbol_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
                 // document_highlight_provider: Some(OneOf::Left(true)),
+                inlay_hint_provider: Some(OneOf::Left(true)),
                 ..Default::default()
             })?)?)?;
         Ok(())
@@ -280,7 +290,7 @@ impl Server {
         })
     }
 
-    fn log_message(&self, message: String) -> Result<()> {
+    pub(crate) fn log_message(&self, message: String) -> Result<()> {
         self.send_message(Notification {
             method: "window/logMessage".to_owned(),
             params: to_value(LogMessageParams {
@@ -344,7 +354,6 @@ impl Server {
                             return Ok(true);
                         }
                         if let Some((id, req)) = parse_request(req)? {
-                            info!("Got request: {:?}", req);
                             let handler = RequestHandler { id };
                             handler.handle(req)?;
                             // Job::RequestHandler(id, Some(Box::new(req))).spawn();

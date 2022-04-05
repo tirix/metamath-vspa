@@ -15,7 +15,7 @@ categories = ["command-line-utilities", "development-tools", "mathematics"]
 [dependencies]
 metamath-knife = { git = "https://github.com/david-a-wheeler/metamath-knife", tag = "v0.3.3" }
 lsp-server = "0.5"
-lsp-types = "0.92"
+lsp-types = { version = "0.92.1", features = ["proposed"] }
 lsp-text = "0.3"
 xi-rope = "0.3"
 crossbeam = "0.8"
