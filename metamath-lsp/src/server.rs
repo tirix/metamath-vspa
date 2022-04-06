@@ -251,7 +251,7 @@ impl Server {
         *self.workspace.lock().unwrap() = Some(Workspace {
             db,
             diags,
-            show_inlay_hints_dv: true,
+            show_inlay_hints_dv: false,
         });
         self.log_message("Database loaded.".to_string()).ok();
     }
