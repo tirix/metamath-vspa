@@ -2,6 +2,7 @@
 //! This generates inlay hints for distinct variables, in the for `F(x)` if `x` is free in `F`
 
 use std::ops::DerefMut;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::rope_ext::RopeExt;
@@ -163,6 +164,11 @@ pub(crate) fn find_smallest_outline_containing<'a>(
     outline
 }
 
+pub(crate) fn stmt_url(addr: StatementAddress, db: &Database) -> Result<Url, ServerError> {
+    let main_file_path: PathBuf = db.statement_source_name(addr).into();
+    Ok(Url::from_file_path(main_file_path.canonicalize()?)?)
+}
+
 pub(crate) fn toggle_hints() -> Result<(), ServerError> {
     let guard = &mut SERVER.workspace.lock().unwrap();
     if let Some(workspace) = guard.deref_mut() {
@@ -179,28 +185,24 @@ pub(crate) fn inlay_hints(
 ) -> Result<Vec<InlayHint>, ServerError> {
     let guard = SERVER.workspace.lock().unwrap();
     if !guard.as_ref().unwrap().show_inlay_hints_dv {
-        return Ok(vec![]);
+        return Ok(vec![]); // DV hints are disabled
     }
     let url = path.url().clone();
     let source = vfs.source(path)?;
+    let root_node = OutlineNodeRef::root_node(&db);
+    if stmt_url(root_node.get_statement().address(), &db)? != url {
+        return Ok(vec![]); // Bail out if we are not in a MM source file
+    }
     let first_byte_idx = source.text.lsp_position_to_byte(range.start);
     let last_byte_idx = source.text.lsp_position_to_byte(range.end);
-    let first_statement = find_smallest_outline_containing(
-        &url,
-        first_byte_idx as FilePos,
-        OutlineNodeRef::root_node(&db),
-        &db,
-    )
-    .get_statement()
-    .address();
-    let last_statement = find_smallest_outline_containing(
-        &url,
-        last_byte_idx as FilePos,
-        OutlineNodeRef::root_node(&db),
-        &db,
-    )
-    .get_statement()
-    .address();
+    let first_statement =
+        find_smallest_outline_containing(&url, first_byte_idx as FilePos, root_node, &db)
+            .get_statement()
+            .address();
+    let last_statement =
+        find_smallest_outline_containing(&url, last_byte_idx as FilePos, root_node, &db)
+            .get_statement()
+            .address();
     let mut context = InlayHintContext::new(source, &db)?;
     if db.lt(&first_statement, &last_statement) {
         for statement in db
