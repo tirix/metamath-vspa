@@ -5,6 +5,7 @@ use crate::definition::definition;
 use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
 use crate::inlay_hints::inlay_hints;
+use crate::inlay_hints::toggle_hints;
 use crate::outline::outline;
 use crate::references::references;
 use crate::rope_ext::RopeExt;
@@ -38,6 +39,7 @@ enum RequestType {
     DocumentHighlight(DocumentHighlightParams),
     InlayHint(InlayHintParams),
     ShowProof(String),
+    ToggleDv,
 }
 
 fn parse_request(
@@ -57,6 +59,7 @@ fn parse_request(
             Some((id, RequestType::DocumentHighlight(from_value(params)?)))
         }
         "textDocument/inlayHint" => Some((id, RequestType::InlayHint(from_value(params)?))),
+        "metamath/toggleDv" => Some((id, RequestType::ToggleDv)),
         "metamath/showProof" => Some((id, RequestType::ShowProof(from_value(params)?))),
         _ => None,
     })
@@ -184,6 +187,7 @@ impl RequestHandler {
                 range,
                 ..
             }) => self.response(inlay_hints(doc.uri.into(), range, vfs, db)),
+            RequestType::ToggleDv => self.response(toggle_hints()),
             _ => self.response_err(ErrorCode::MethodNotFound, "Not implemented"),
         }
     }
@@ -206,6 +210,7 @@ lazy_static! {
 pub struct Workspace {
     db: Database,
     diags: HashMap<Url, Vec<Diagnostic>>,
+    pub(crate) show_inlay_hints_dv: bool,
 }
 
 pub struct Server {
@@ -243,7 +248,11 @@ impl Server {
         for (uri, diag) in lsp_diags.into_iter().flatten() {
             diags.entry(uri).or_insert_with(Vec::new).push(diag);
         }
-        *self.workspace.lock().unwrap() = Some(Workspace { db, diags });
+        *self.workspace.lock().unwrap() = Some(Workspace {
+            db,
+            diags,
+            show_inlay_hints_dv: true,
+        });
         self.log_message("Database loaded.".to_string()).ok();
     }
 

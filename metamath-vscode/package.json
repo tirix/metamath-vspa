@@ -81,25 +81,31 @@
 		"commands": [
 			{
 				"command": "metamath.restartServer",
-				"category": "MM",
+				"category": "Metamath",
 				"title": "Restart",
 				"description": "Restart the Language Server."
 			},
 			{
 				"command": "metamath.shutdownServer",
-				"category": "MM",
+				"category": "Metamath",
 				"title": "Shutdown",
 				"description": "Shut down the Language Server."
 			},
 			{
 				"command": "metamath.showProof",
-				"category": "MM",
+				"category": "Metamath",
 				"title": "Show Proof",
 				"description": "Open the corresponding proof file."
 			},
 			{
+				"command": "metamath.toggleDv",
+				"category": "Metamath",
+				"title": "Toggle DV Hints",
+				"description": "Toggle distinct variable hints."
+			},
+			{
 				"command": "metamath.unify",
-				"category": "MM",
+				"category": "Metamath",
 				"title": "Unify",
 				"description": "Unify unproven statements the current file."
 			}

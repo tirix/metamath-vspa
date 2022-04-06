@@ -1,8 +1,11 @@
 //! Provides inlay hints
+//! This generates inlay hints for distinct variables, in the for `F(x)` if `x` is free in `F`
 
+use std::ops::DerefMut;
 use std::sync::Arc;
 
 use crate::rope_ext::RopeExt;
+use crate::server::SERVER;
 use crate::util::FileRef;
 use crate::vfs::FileContents;
 use crate::vfs::Vfs;
@@ -160,12 +163,24 @@ pub(crate) fn find_smallest_outline_containing<'a>(
     outline
 }
 
+pub(crate) fn toggle_hints() -> Result<(), ServerError> {
+    let guard = &mut SERVER.workspace.lock().unwrap();
+    if let Some(workspace) = guard.deref_mut() {
+        workspace.show_inlay_hints_dv ^= true;
+    }
+    Ok(())
+}
+
 pub(crate) fn inlay_hints(
     path: FileRef,
     range: Range,
     vfs: &Vfs,
     db: Database,
 ) -> Result<Vec<InlayHint>, ServerError> {
+    let guard = SERVER.workspace.lock().unwrap();
+    if !guard.as_ref().unwrap().show_inlay_hints_dv {
+        return Ok(vec![]);
+    }
     let url = path.url().clone();
     let source = vfs.source(path)?;
     let first_byte_idx = source.text.lsp_position_to_byte(range.start);
