@@ -13,7 +13,7 @@ categories = ["command-line-utilities", "development-tools", "mathematics"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-metamath-knife = { git = "https://github.com/david-a-wheeler/metamath-knife", tag = "v0.3.3" }
+metamath-knife = { git = "https://github.com/david-a-wheeler/metamath-knife", tag = "v0.3.5" }
 lsp-server = "0.5"
 lsp-types = "0.92"
 lsp-text = "0.3"
@@ -29,6 +29,11 @@ pathdiff = "0.2"
 lazy_static = "1.4"
 # simplelog = "0.11"
 log = "0.4"
+
+# Specific to proofs
+regex = { version = "1.5", default-features = false, features = ["std", "perf"] }
+bytecount = "0.6.2"
+memchr = "2.4"
 
 [[bin]]
 name = "mm-lsp-server"

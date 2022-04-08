@@ -1,6 +1,5 @@
 //! Provides hover information
 
-use crate::rope_ext::RopeExt;
 use crate::server::word_at;
 use crate::util::FileRef;
 use crate::vfs::Vfs;
@@ -10,6 +9,7 @@ use metamath_knife::Database;
 use metamath_knife::Span;
 use metamath_knife::StatementRef;
 use metamath_knife::StatementType;
+use metamath_knife::grammar::FormulaToken;
 use std::path::PathBuf;
 
 /// Finds the statement to display for a given token or label
@@ -26,7 +26,7 @@ pub(crate) fn find_statement<'a>(token: &'a [u8], db: &'a Database) -> Option<St
                 // TODO - this could be provided as a utility by metamath-knife wihtout having to build a formula
                 let grammar = db.grammar_result();
                 if let Ok(formula) = grammar.parse_formula(
-                    &mut [symbol.atom].into_iter(),
+                    &mut [FormulaToken { symbol: symbol.atom, span: Span::default() } ].into_iter(),
                     &grammar.typecodes(),
                     nset,
                 ) {
@@ -53,21 +53,21 @@ pub(crate) fn span_range(
     db: &Database,
 ) -> Option<Range> {
     let path: PathBuf = db.statement_source_name(stmt.address()).into();
-    let source = vfs.source(path.into()).ok()?;
+    let source = vfs.source(path.into(), &db).ok()?;
     Some(Range::new(
-        source.text.byte_to_lsp_position(span.start as usize),
-        source.text.byte_to_lsp_position(span.end as usize),
+        source.byte_to_lsp_position(span.start as usize),
+        source.byte_to_lsp_position(span.end as usize),
     ))
 }
 
 pub(crate) fn stmt_location(stmt: StatementRef<'_>, vfs: &Vfs, db: &Database) -> Option<Location> {
     let path: PathBuf = db.statement_source_name(stmt.address()).into();
-    let source = vfs.source(path.clone().into()).ok()?;
+    let source = vfs.source(path.clone().into(), &db).ok()?;
     let uri = Url::from_file_path(path.canonicalize().ok()?).ok()?;
     let span = stmt.span();
     let range = Range::new(
-        source.text.byte_to_lsp_position(span.start as usize),
-        source.text.byte_to_lsp_position(span.end as usize),
+        source.byte_to_lsp_position(span.start as usize),
+        source.byte_to_lsp_position(span.end as usize),
     );
     Some(Location { uri, range })
 }
@@ -78,7 +78,7 @@ pub(crate) fn definition(
     vfs: &Vfs,
     db: Database,
 ) -> Result<Option<Location>, ServerError> {
-    let text = vfs.source(path)?;
+    let text = vfs.source(path, &db)?;
     let (word, _) = word_at(pos, text);
     if let Some(stmt) = find_statement(word.as_bytes(), &db) {
         Ok(stmt_location(stmt, vfs, &db))
