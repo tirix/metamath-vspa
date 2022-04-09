@@ -114,7 +114,7 @@ function showProof() {
 	// 	textDocument: TextDocumentIdentifier.create(editor.document.uri.toString()),
 	// 	range: selectionRange
 	// };
-	client.sendRequest(ShowProofRequest.type, label).then(async (content) => {
+	client.sendRequest(ShowProofRequest.type, label).then(async (content: any) => {
 		// Open a new document with the given MMP content
 		const doc = await workspace.openTextDocument({
 			language: 'metamath-proof',
