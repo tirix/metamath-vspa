@@ -6,7 +6,6 @@ use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
 use crate::outline::outline;
 use crate::references::references;
-use crate::rope_ext::RopeExt;
 use crate::show_proof::show_proof;
 use crate::vfs::FileContents;
 use crate::vfs::Vfs;
@@ -99,7 +98,7 @@ fn is_label_char(c: char) -> bool {
 
 /// Attempts to find a word around the given position
 pub fn word_at(pos: Position, source: FileContents) -> (String, Range) {
-    let line = source.text.line(pos.line);
+    let line = source.line(pos.line);
     let mut start = 0;
     let mut end = line.len() as u32;
     for (idx, ch) in line.chars().enumerate() {
@@ -215,13 +214,14 @@ impl Server {
         }
     }
 
+    pub(crate) fn get_database(&self) -> Database {
+        self.workspace.lock().unwrap().as_ref().unwrap().db.clone()
+    }
+
     pub fn init(&self, options: DbOptions, file_name: &str) {
         let mut db = Database::new(options);
         db.parse(file_name.into(), Vec::new());
-        db.name_pass();
-        db.scope_pass();
         db.outline_pass();
-        db.stmt_parse_pass();
         let mm_diags = db.diag_notations(&[
             DiagnosticClass::Parse,
             DiagnosticClass::Scope,
@@ -261,6 +261,7 @@ impl Server {
     fn send_workspace_diagnostics(&self) {
         let guard = self.workspace.lock().unwrap();
         let workspace = guard.as_ref().unwrap();
+        SERVER.log_message("Sending diagnostics!".to_owned()).ok();
         for (uri, diagnostics) in &workspace.diags {
             SERVER
                 .send_diagnostics(uri.clone(), None, diagnostics.to_vec())
@@ -343,8 +344,10 @@ impl Server {
                         if self.conn.handle_shutdown(&req)? {
                             return Ok(true);
                         }
+                        SERVER
+                            .log_message(format!("Got request {}", req.method))
+                            .ok();
                         if let Some((id, req)) = parse_request(req)? {
-                            info!("Got request: {:?}", req);
                             let handler = RequestHandler { id };
                             handler.handle(req)?;
                             // Job::RequestHandler(id, Some(Box::new(req))).spawn();
@@ -372,18 +375,36 @@ impl Server {
                         use lsp_types::notification::*;
                         match notif.method.as_str() {
                             DidOpenTextDocument::METHOD => {
+                                let db = self.get_database();
                                 let DidOpenTextDocumentParams { text_document: doc } =
                                     from_value(notif.params)?;
-                                let path = doc.uri.into();
+                                let path = doc.uri.clone().into();
                                 info!("open {:?}", path);
-                                let _vf = self.vfs.open_virt(path, doc.version, doc.text);
+                                if let Ok(vf) = self.vfs.open_virt(path, doc.version, doc.text, db)
+                                {
+                                    if let Some((version, diagnotstics)) = vf.diagnostics() {
+                                        self.send_diagnostics(doc.uri, version, diagnotstics).ok();
+                                    }
+                                }
                             }
-                            // DidChangeTextDocument::METHOD => {
-                            //     let DidChangeTextDocumentParams {text_document: doc} = from_value(notif.params)?;
-                            //     let path = doc.uri.into();
-                            //     info!("open {:?}", path);
-                            //     self.vfs.open_virt(path, doc.version, doc.text);
-                            // },
+                            DidChangeTextDocument::METHOD => {
+                                let DidChangeTextDocumentParams {
+                                    text_document: doc,
+                                    content_changes,
+                                } = from_value(notif.params)?;
+                                if !content_changes.is_empty() {
+                                    let path = doc.uri.clone().into();
+                                    info!("change {:?}", path);
+                                    let file =
+                                        self.vfs.get(&path).ok_or("changed nonexistent file")?;
+                                    for change in content_changes.iter() {
+                                        file.apply_change(doc.version, change);
+                                    }
+                                    if let Some((version, diagnotstics)) = file.diagnostics() {
+                                        self.send_diagnostics(doc.uri, version, diagnotstics).ok();
+                                    }
+                                }
+                            }
                             _ => {
                                 info!("Got notification: {:?}", notif);
                             }
