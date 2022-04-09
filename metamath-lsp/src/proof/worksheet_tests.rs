@@ -2,7 +2,7 @@ use lsp_types::{
     Diagnostic as LspDiagnostic, DiagnosticSeverity, Position, Range as LspRange,
     TextDocumentContentChangeEvent,
 };
-use metamath_knife::{Database, database::DbOptions};
+use metamath_knife::{database::DbOptions, Database};
 
 use crate::proof::ProofWorksheet;
 
