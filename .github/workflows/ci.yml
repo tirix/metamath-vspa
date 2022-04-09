@@ -21,10 +21,13 @@ jobs:
     - name: Set Node.js 14
       uses: actions/setup-node@v1
       with:
-        path: metamath-vscode
         version: 14.x
-    - run: npm ci
-    - run: npm run compile
+    - name: Clean Install
+      working-directory: metamath-vscode
+      run: npm ci
+    - name: Compile VsCode Extension
+      working-directory: metamath-vscode
+      run: npm run compile
   build-metamath-lsp:
     name: Metamath LSP
     runs-on: ubuntu-latest
