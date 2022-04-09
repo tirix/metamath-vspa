@@ -81,25 +81,31 @@
 		"commands": [
 			{
 				"command": "metamath.restartServer",
-				"category": "MM",
+				"category": "Metamath",
 				"title": "Restart",
 				"description": "Restart the Language Server."
 			},
 			{
 				"command": "metamath.shutdownServer",
-				"category": "MM",
+				"category": "Metamath",
 				"title": "Shutdown",
 				"description": "Shut down the Language Server."
 			},
 			{
 				"command": "metamath.showProof",
-				"category": "MM",
+				"category": "Metamath",
 				"title": "Show Proof",
 				"description": "Open the corresponding proof file."
 			},
 			{
+				"command": "metamath.toggleDv",
+				"category": "Metamath",
+				"title": "Toggle DV Hints",
+				"description": "Toggle distinct variable hints."
+			},
+			{
 				"command": "metamath.unify",
-				"category": "MM",
+				"category": "Metamath",
 				"title": "Unify",
 				"description": "Unify unproven statements the current file."
 			}
@@ -126,19 +132,19 @@
 		"@types/glob": "^7.1.4",
 		"@types/mocha": "^9.1.0",
 		"@types/node": "^14.18.12",
-		"@types/vscode": "^1.54.0",
-		"@typescript-eslint/eslint-plugin": "^4.31.1",
-		"@typescript-eslint/parser": "^4.31.1",
-		"@vscode/test-electron": "^1.6.2",
-		"eslint": "^7.32.0",
+		"@types/vscode": "^1.65.0",
+		"@typescript-eslint/eslint-plugin": "^5.10.0",
+		"@typescript-eslint/parser": "^5.10.0",
+		"@vscode/test-electron": "^2.1.1",
+		"eslint": "^8.10.0",
 		"fs": "0.0.1-security",
 		"glob": "^7.1.7",
-		"mocha": "^9.2.1",
-		"typescript": "^4.5.5",
-        "vsce": "^1.63.0"
+		"mocha": "^9.2.2",
+		"typescript": "^4.6.3",
+		"vsce": "^2.6.7"
 	},
 	"dependencies": {
-		"vscode-languageclient": "^6.1.4"
+		"vscode-languageclient": "8.0.0-next.14"
 	},
 	"__metadata": {
 		"id": "137aa346-d69a-4fcf-af2d-94d7dd5ed399",

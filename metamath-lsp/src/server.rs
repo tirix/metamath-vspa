@@ -4,6 +4,8 @@
 use crate::definition::definition;
 use crate::diag::make_lsp_diagnostic;
 use crate::hover::hover;
+use crate::inlay_hints::inlay_hints;
+use crate::inlay_hints::toggle_hints;
 use crate::outline::outline;
 use crate::references::references;
 use crate::show_proof::show_proof;
@@ -34,12 +36,15 @@ enum RequestType {
     DocumentSymbol(DocumentSymbolParams),
     References(ReferenceParams),
     DocumentHighlight(DocumentHighlightParams),
+    InlayHint(InlayHintParams),
     ShowProof(String),
+    ToggleDv,
 }
 
 fn parse_request(
     Request { id, method, params }: Request,
 ) -> Result<Option<(RequestId, RequestType)>> {
+    SERVER.log_message(format!("Got request: {}", method)).ok();
     Ok(match method.as_str() {
         "textDocument/completion" => Some((id, RequestType::Completion(from_value(params)?))),
         "completionItem/resolve" => Some((id, RequestType::CompletionResolve(from_value(params)?))),
@@ -52,6 +57,8 @@ fn parse_request(
         "textDocument/documentHighlight" => {
             Some((id, RequestType::DocumentHighlight(from_value(params)?)))
         }
+        "textDocument/inlayHint" => Some((id, RequestType::InlayHint(from_value(params)?))),
+        "metamath/toggleDv" => Some((id, RequestType::ToggleDv)),
         "metamath/showProof" => Some((id, RequestType::ShowProof(from_value(params)?))),
         _ => None,
     })
@@ -174,6 +181,12 @@ impl RequestHandler {
             RequestType::DocumentSymbol(DocumentSymbolParams { .. }) => {
                 self.response(outline(vfs, &db))
             }
+            RequestType::InlayHint(InlayHintParams {
+                text_document: doc,
+                range,
+                ..
+            }) => self.response(inlay_hints(doc.uri.into(), range, vfs, db)),
+            RequestType::ToggleDv => self.response(toggle_hints()),
             _ => self.response_err(ErrorCode::MethodNotFound, "Not implemented"),
         }
     }
@@ -196,6 +209,7 @@ lazy_static! {
 pub struct Workspace {
     db: Database,
     diags: HashMap<Url, Vec<Diagnostic>>,
+    pub(crate) show_inlay_hints_dv: bool,
 }
 
 pub struct Server {
@@ -234,7 +248,11 @@ impl Server {
         for (uri, diag) in lsp_diags.into_iter().flatten() {
             diags.entry(uri).or_insert_with(Vec::new).push(diag);
         }
-        *self.workspace.lock().unwrap() = Some(Workspace { db, diags });
+        *self.workspace.lock().unwrap() = Some(Workspace {
+            db,
+            diags,
+            show_inlay_hints_dv: false,
+        });
         self.log_message("Database loaded.".to_string()).ok();
     }
 
@@ -253,6 +271,7 @@ impl Server {
                 document_symbol_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
                 // document_highlight_provider: Some(OneOf::Left(true)),
+                inlay_hint_provider: Some(OneOf::Left(true)),
                 ..Default::default()
             })?)?)?;
         Ok(())
@@ -281,7 +300,7 @@ impl Server {
         })
     }
 
-    fn log_message(&self, message: String) -> Result<()> {
+    pub(crate) fn log_message(&self, message: String) -> Result<()> {
         self.send_message(Notification {
             method: "window/logMessage".to_owned(),
             params: to_value(LogMessageParams {
