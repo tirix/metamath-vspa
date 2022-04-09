@@ -7,10 +7,10 @@ use lsp_types::{
 use metamath_knife::diag::StmtParseError;
 use metamath_knife::statement::StatementAddress;
 use metamath_knife::{Database, StatementRef};
-use regex::{Regex, Match};
+use regex::{Match, Regex};
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::ops::{Range, Index};
+use std::ops::{Index, Range};
 
 /// A Diagnostic
 #[derive(Clone, Debug)]
@@ -48,14 +48,17 @@ impl Span {
 
     #[inline]
     #[must_use]
-    pub fn as_ref(self, buf: &str) -> &str {
+    pub fn into_ref(self, buf: &str) -> &str {
         &buf[self.0]
     }
 
     #[inline]
     #[must_use]
     pub fn as_range(&self, offset: usize) -> Range<usize> {
-        Range { start: offset + self.0.start, end: offset+self.0.end }
+        Range {
+            start: offset + self.0.start,
+            end: offset + self.0.end,
+        }
     }
 }
 
@@ -80,7 +83,7 @@ impl Diag {
     }
 
     fn get_range(&self, step_info: &StepInfo) -> Range<usize> {
-        let step_span = step_info.byte_idx .. step_info.byte_idx + step_info.source.len();
+        let step_span = step_info.byte_idx..step_info.byte_idx + step_info.source.len();
         match self {
             Diag::UnknownStepLabel(range) | Diag::UnknownTheoremLabel(range) => Range {
                 start: step_info.byte_idx + range.start,
@@ -98,8 +101,9 @@ impl Diag {
                 end: step_info.step.formula_range(step_info.byte_idx).start + span.end as usize,
             },
             Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementNoTypeCode)
-            | Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementWrongTypeCode(_)) =>
-                step_info.step.formula_range(step_info.byte_idx),
+            | Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementWrongTypeCode(_)) => {
+                step_info.step.formula_range(step_info.byte_idx)
+            }
         }
     }
 }
@@ -115,7 +119,7 @@ struct StepInfo {
     byte_idx: usize,
     line_idx: usize,
     source: String,
-    step: Step,    
+    step: Step,
 }
 
 /// If there is any space character at the beginning of a line,
@@ -129,10 +133,16 @@ fn is_followup_char(c: u8) -> bool {
 fn find_step_start(s: &[u8]) -> Option<usize> {
     let mut step_start_idx = 0;
     loop {
-        if step_start_idx >= s.len() { None?; }
+        if step_start_idx >= s.len() {
+            None?;
+        }
         step_start_idx += memchr::memchr(b'\n', &s[step_start_idx..])? + 1;
-        if step_start_idx >= s.len() { None?; }
-        if !is_followup_char(s[step_start_idx]) { break; }
+        if step_start_idx >= s.len() {
+            None?;
+        }
+        if !is_followup_char(s[step_start_idx]) {
+            break;
+        }
     }
     Some(step_start_idx)
 }
@@ -141,10 +151,16 @@ fn find_step_start(s: &[u8]) -> Option<usize> {
 fn find_step_end(s: &[u8]) -> Option<usize> {
     let mut step_end_idx = 0;
     loop {
-        if step_end_idx >= s.len() { None?; }
+        if step_end_idx >= s.len() {
+            None?;
+        }
         step_end_idx += memchr::memchr(b'\n', &s[step_end_idx..])? + 1;
-        if step_end_idx >= s.len() { None?; }
-        if s[step_end_idx] == b'*' || s[step_end_idx] == b'$' { break; }
+        if step_end_idx >= s.len() {
+            None?;
+        }
+        if s[step_end_idx] == b'*' || s[step_end_idx] == b'$' {
+            break;
+        }
     }
     Some(step_end_idx)
 }
@@ -181,18 +197,24 @@ impl Index<&str> for ProofWorksheet {
 }
 
 impl ProofWorksheet {
-    pub fn from_reader<T: std::io::Read>(mut file: T, db: &Database) -> Result<Self, std::io::Error> {
+    pub fn from_reader<T: std::io::Read>(
+        mut file: T,
+        db: &Database,
+    ) -> Result<Self, std::io::Error> {
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)?;
         Self::from_string(buffer, db)
     }
 
     pub fn from_string(text: String, db: &Database) -> Result<Self, std::io::Error> {
-        let mut worksheet = ProofWorksheet { db: db.clone(), ..ProofWorksheet::default() };
+        let mut worksheet = ProofWorksheet {
+            db: db.clone(),
+            ..ProofWorksheet::default()
+        };
         worksheet.apply_change(&TextDocumentContentChangeEvent {
-            range: None, 
-            range_length: None, 
-            text 
+            range: None,
+            range_length: None,
+            text,
         });
         Ok(worksheet)
     }
@@ -202,16 +224,22 @@ impl ProofWorksheet {
     }
 
     fn step_at_line(&self, line_idx: usize) -> Option<&StepInfo> {
-        let step_idx = self.steps.binary_search_by(|s| s.line_idx.cmp(&line_idx)).map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
+        let step_idx = self
+            .steps
+            .binary_search_by(|s| s.line_idx.cmp(&line_idx))
+            .map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
         if step_idx > 0 {
-            Some(&self.step_info(step_idx - 1))
+            Some(self.step_info(step_idx - 1))
         } else {
             None
         }
     }
 
     pub fn byte_to_lsp_position(&self, byte_idx: usize) -> Position {
-        let step_idx = self.steps.binary_search_by(|s| s.byte_idx.cmp(&byte_idx)).map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
+        let step_idx = self
+            .steps
+            .binary_search_by(|s| s.byte_idx.cmp(&byte_idx))
+            .map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
         let (start_byte_idx, start_line_idx, source) = if step_idx > 0 {
             let step_info = &self.step_info(step_idx - 1);
             (step_info.byte_idx, step_info.line_idx, &step_info.source)
@@ -219,7 +247,8 @@ impl ProofWorksheet {
             (0, 0, &self.top)
         };
         let line_idx = line_count(&source[0..byte_idx - start_byte_idx]);
-        let line_start_idx = memchr::memrchr(b'\n', source[0..byte_idx - start_byte_idx].as_bytes()).unwrap_or(0);
+        let line_start_idx =
+            memchr::memrchr(b'\n', source[0..byte_idx - start_byte_idx].as_bytes()).unwrap_or(0);
         Position {
             line: (start_line_idx + line_idx) as u32,
             character: (byte_idx - line_start_idx - start_byte_idx) as u32,
@@ -227,8 +256,11 @@ impl ProofWorksheet {
     }
 
     pub fn lsp_position_to_byte(&self, position: Position) -> usize {
-        let step_idx = self.steps.binary_search_by(|s| s.line_idx.cmp(&(position.line as usize))).map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
-        let (start_byte_idx, line_idx, source) = if step_idx > 0 {
+        let step_idx = self
+            .steps
+            .binary_search_by(|s| s.line_idx.cmp(&(position.line as usize)))
+            .map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
+        let (start_byte_idx, mut line_idx, source) = if step_idx > 0 {
             let step_info = &self.step_info(step_idx - 1);
             (step_info.byte_idx, step_info.line_idx, &step_info.source)
         } else {
@@ -237,13 +269,17 @@ impl ProofWorksheet {
         let mut byte_idx = 0;
         while line_idx < position.line as usize {
             byte_idx += memchr::memchr(b'\n', source[byte_idx..].as_bytes()).unwrap_or(0) + 1;
+            line_idx += 1;
         }
         start_byte_idx + byte_idx + position.character as usize
     }
 
     /// Returns the (zero-based) line
     pub fn line(&self, target_line_idx: u32) -> Cow<str> {
-        let step_idx = self.steps.binary_search_by(|s| s.line_idx.cmp(&(target_line_idx as usize))).map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
+        let step_idx = self
+            .steps
+            .binary_search_by(|s| s.line_idx.cmp(&(target_line_idx as usize)))
+            .map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
         let (mut line_idx, source) = if step_idx > 0 {
             let step_info = &self.step_info(step_idx - 1);
             (step_info.line_idx, &step_info.source)
@@ -255,7 +291,8 @@ impl ProofWorksheet {
             byte_idx += memchr::memchr(b'\n', source[byte_idx..].as_bytes()).unwrap_or(0) + 1;
             line_idx += 1;
         }
-        let end_byte_idx = byte_idx + memchr::memchr(b'\n', source[byte_idx..].as_bytes()).unwrap_or(0);
+        let end_byte_idx =
+            byte_idx + memchr::memchr(b'\n', source[byte_idx..].as_bytes()).unwrap_or(0);
         source[byte_idx..end_byte_idx].into()
     }
 
@@ -263,10 +300,13 @@ impl ProofWorksheet {
     /// As well as the index of that position relative to the span
     #[inline]
     fn step_at(&self, position: Position) -> (Option<StepIdx>, usize) {
-        let step_idx = self.steps.binary_search_by(|s| s.line_idx.cmp(&(position.line as usize))).map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
+        let step_idx = self
+            .steps
+            .binary_search_by(|s| s.line_idx.cmp(&(position.line as usize)))
+            .map_or_else(|step_idx| step_idx, |step_idx| step_idx + 1);
         let (step_idx, mut line_idx, source) = if step_idx > 0 {
             let step_info = &self.step_info(step_idx - 1);
-            (Some(step_idx - 1 ), step_info.line_idx, &step_info.source)
+            (Some(step_idx - 1), step_info.line_idx, &step_info.source)
         } else {
             (None, 0, &self.top)
         };
@@ -282,9 +322,14 @@ impl ProofWorksheet {
     pub fn apply_change(&mut self, change: &TextDocumentContentChangeEvent) {
         // Get changed range
         let range = change.range.unwrap_or(LspRange {
-            start: self.byte_to_lsp_position(0), 
-            end: self.byte_to_lsp_position(self.steps.iter().last().map_or(0, |s| s.byte_idx + s.source.len())),
-        } );
+            start: self.byte_to_lsp_position(0),
+            end: self.byte_to_lsp_position(
+                self.steps
+                    .iter()
+                    .last()
+                    .map_or(0, |s| s.byte_idx + s.source.len()),
+            ),
+        });
 
         // Find out the first step and last step impacted.
         let (first_step_idx, first_byte_idx) = self.step_at(range.start);
@@ -294,9 +339,9 @@ impl ProofWorksheet {
 
         // So we can recover the full new text
         let mut new_text = String::new();
-        new_text.push_str(Span(0..first_byte_idx).as_ref(&first_source));
+        new_text.push_str(Span(0..first_byte_idx).into_ref(first_source));
         new_text.push_str(&change.text);
-        new_text.push_str(Span(last_byte_idx..last_source.len()).as_ref(&last_source));
+        new_text.push_str(Span(last_byte_idx..last_source.len()).into_ref(last_source));
         let mut new_text = new_text.as_str();
 
         // First handle the "top" part, until the first step.
@@ -310,18 +355,25 @@ impl ProofWorksheet {
         // Then handle the remaining text as steps
         let mut add_steps = vec![];
         let start_step_idx = first_step_idx.unwrap_or(0);
-        let start_byte_idx = first_step_idx.map_or_else(|| self.top.len(), |i| self.steps[i].byte_idx);
-        let start_line_idx = first_step_idx.map_or_else(|| line_count(&self.top), |i| self.steps[i].line_idx);
+        let start_byte_idx =
+            first_step_idx.map_or_else(|| self.top.len(), |i| self.steps[i].byte_idx);
+        let start_line_idx =
+            first_step_idx.map_or_else(|| line_count(&self.top), |i| self.steps[i].line_idx);
         let mut byte_idx = start_byte_idx;
         let mut line_idx = start_line_idx;
         let _step_start_idx = 0;
-        while new_text.len() > 0 {
+        while !new_text.is_empty() {
             let step_len = find_step_start(new_text.as_bytes()).unwrap_or(new_text.len());
             let step_line_count = line_count(&new_text[..step_len]);
             let step_end = find_step_end(new_text[..step_len].as_bytes()).unwrap_or(step_len);
             let source = new_text[..step_end].to_owned();
             let step = Step::from_str(&source, &self.db);
-            add_steps.push(StepInfo { byte_idx, line_idx, source, step });
+            add_steps.push(StepInfo {
+                byte_idx,
+                line_idx,
+                source,
+                step,
+            });
             byte_idx += step_len;
             line_idx += step_line_count;
             new_text = &new_text[step_len..];
@@ -331,9 +383,13 @@ impl ProofWorksheet {
         if let Some(end_step_idx) = last_step_idx {
             let add_byte_idx = byte_idx - start_byte_idx;
             let add_line_idx = line_idx - start_line_idx;
-            let sub_byte_idx = self.steps[end_step_idx].byte_idx + self.steps[end_step_idx].source.len() - self.steps[start_step_idx].byte_idx;
-            let sub_line_idx:usize = self.steps[end_step_idx].line_idx + line_count(&self.steps[end_step_idx].source) - self.steps[start_step_idx].line_idx;
-            for step_idx in last_step_idx.unwrap_or(0) + 1 .. self.steps.len() {
+            let sub_byte_idx = self.steps[end_step_idx].byte_idx
+                + self.steps[end_step_idx].source.len()
+                - self.steps[start_step_idx].byte_idx;
+            let sub_line_idx: usize = self.steps[end_step_idx].line_idx
+                + line_count(&self.steps[end_step_idx].source)
+                - self.steps[start_step_idx].line_idx;
+            for step_idx in last_step_idx.unwrap_or(0) + 1..self.steps.len() {
                 self.steps[step_idx].byte_idx -= sub_byte_idx;
                 self.steps[step_idx].byte_idx += add_byte_idx;
                 self.steps[step_idx].line_idx -= sub_line_idx;
@@ -342,7 +398,10 @@ impl ProofWorksheet {
         }
 
         // Finally, we can replace the new steps into our reference
-        self.steps.splice(first_step_idx.unwrap_or(0)..last_step_idx.map(|i| i+1).unwrap_or(0), add_steps);
+        self.steps.splice(
+            first_step_idx.unwrap_or(0)..last_step_idx.map(|i| i + 1).unwrap_or(0),
+            add_steps,
+        );
     }
 
     // /// Creates a new proof worksheet with the given source text
@@ -415,7 +474,7 @@ impl ProofWorksheet {
                 r"^\$\( <MM> <PROOF_ASST> THEOREM=([0-9A-Za-z_\-\.]+)  LOC_AFTER=(\?|[0-9A-Za-z_\-\.]+)",
             ).unwrap();
         }
-        let eol = memchr::memchr(b'\n', self.top.as_bytes()).unwrap_or(self.top.len());
+        let eol = memchr::memchr(b'\n', self.top.as_bytes()).unwrap_or_else(|| self.top.len());
         let first_line = &self.top[0..eol];
         FIRST_LINE.captures(first_line).map(|caps| {
             let statement_name = caps.get(1).unwrap().as_str();
@@ -488,8 +547,8 @@ impl ProofWorksheet {
 
 #[cfg(test)]
 mod tests {
-    use metamath_knife::database::DbOptions;
     use super::*;
+    use metamath_knife::database::DbOptions;
 
     pub(super) fn mkdb(text: &[u8]) -> Database {
         let options = DbOptions {
@@ -505,11 +564,23 @@ mod tests {
         db
     }
 
-    fn mkdiag(line_from: u32, char_from: u32, line_to: u32, char_to: u32, message: &str) -> LspDiagnostic {
+    fn mkdiag(
+        line_from: u32,
+        char_from: u32,
+        line_to: u32,
+        char_to: u32,
+        message: &str,
+    ) -> LspDiagnostic {
         LspDiagnostic {
             range: LspRange {
-                start: Position { line: line_from, character: char_from },
-                end: Position { line: line_to, character: char_to },
+                start: Position {
+                    line: line_from,
+                    character: char_from,
+                },
+                end: Position {
+                    line: line_to,
+                    character: char_to,
+                },
             },
             severity: Some(DiagnosticSeverity::ERROR),
             message: message.to_owned(),
@@ -536,7 +607,7 @@ mod tests {
             a1i $p |- ( ps -> ph ) $= ? $.
         $}
     ";
-    
+
     const TEST_PROOF: &str = "$( <MM> <PROOF_ASST> THEOREM=a1i  LOC_AFTER=?
 
 * Inference introducing an antecedent.  (Contributed by NM, 29-Dec-1992.)
@@ -563,9 +634,38 @@ $)
         assert_eq!(worksheet.steps[1].byte_idx, 143);
         assert_eq!(worksheet.steps[2].byte_idx, 188);
         assert!(worksheet.step_at_line(0).is_none());
-        assert_eq!(worksheet.byte_to_lsp_position(188), Position {line: 7, character: 0 });
-        assert_eq!(worksheet.byte_to_lsp_position(200), Position {line: 7, character: 12 });
-        assert_eq!(worksheet.steps[1].source, "2::ax-1        |- ( ph\n    -> ( ps -> ph ) )\n");
+        assert_eq!(
+            worksheet.byte_to_lsp_position(188),
+            Position {
+                line: 7,
+                character: 0
+            }
+        );
+        assert_eq!(
+            worksheet.byte_to_lsp_position(200),
+            Position {
+                line: 7,
+                character: 12
+            }
+        );
+        assert_eq!(
+            worksheet.lsp_position_to_byte(Position {
+                line: 7,
+                character: 0
+            }),
+            188
+        );
+        assert_eq!(
+            worksheet.lsp_position_to_byte(Position {
+                line: 7,
+                character: 12
+            }),
+            200
+        );
+        assert_eq!(
+            worksheet.steps[1].source,
+            "2::ax-1        |- ( ph\n    -> ( ps -> ph ) )\n"
+        );
         assert_eq!(worksheet.line(7), "qed:1,2:ax-mp  |- ( ps -> ph )");
         assert_eq!(worksheet.line(6), "    -> ( ps -> ph ) )");
         println!("{:#?}", worksheet.diagnostics());
@@ -575,7 +675,8 @@ $)
     #[test]
     fn parse_worksheet_diags() {
         let db = &mkdb(TEST_DB);
-        let worksheet = ProofWorksheet::from_string("$( <MM> <PROOF_ASST> THEOREM=mp2  LOC_AFTER=?
+        let worksheet = ProofWorksheet::from_string(
+            "$( <MM> <PROOF_ASST> THEOREM=mp2  LOC_AFTER=?
 
 * A double modus ponens inference.  (Contributed by NM, 5-Apr-1994.)
 
@@ -590,14 +691,18 @@ qed:2,4:ax-mp  |- ch
 $=    ( wi ax-mp ) BCEABCGDFHH $.
 
 $)
-".to_string(), db).unwrap();
+"
+            .to_string(),
+            db,
+        )
+        .unwrap();
         let diags = worksheet.diagnostics();
         println!("{:#?}", diags);
-        assert_eq!(diags[0], mkdiag(4,4,4,9,"Unknown theorem"));
-        assert_eq!(diags[1], mkdiag(5,4,5,9,"Unknown theorem"));
-        assert_eq!(diags[2], mkdiag(6,4,6,9,"Unknown theorem"));
-        assert_eq!(diags[3], mkdiag(8,0,9,0,"Could not parse proof line"));
-        assert_eq!(diags[4], mkdiag(9,0,10,0,"Could not parse proof line"));
+        assert_eq!(diags[0], mkdiag(4, 4, 4, 9, "Unknown theorem"));
+        assert_eq!(diags[1], mkdiag(5, 4, 5, 9, "Unknown theorem"));
+        assert_eq!(diags[2], mkdiag(6, 4, 6, 9, "Unknown theorem"));
+        assert_eq!(diags[3], mkdiag(8, 0, 9, 0, "Could not parse proof line"));
+        assert_eq!(diags[4], mkdiag(9, 0, 10, 0, "Could not parse proof line"));
     }
 
     #[test]
@@ -606,10 +711,16 @@ $)
         let mut worksheet = ProofWorksheet::from_string(TEST_PROOF.to_string(), db).unwrap();
         worksheet.apply_change(&TextDocumentContentChangeEvent {
             range: Some(LspRange {
-                start: Position { line: 7, character: 0 },
-                end: Position { line: 7, character: 0 },
-            }), 
-            range_length: None, 
+                start: Position {
+                    line: 7,
+                    character: 0,
+                },
+                end: Position {
+                    line: 7,
+                    character: 0,
+                },
+            }),
+            range_length: None,
             text: "3::ax-1 |- ( ch -> ( ps -> ch ) )\n".to_owned(),
         });
         println!("{:#?}", worksheet.steps);
@@ -620,7 +731,10 @@ $)
         assert_eq!(worksheet.steps[1].byte_idx, 143);
         assert_eq!(worksheet.steps[2].byte_idx, 188);
         assert_eq!(worksheet.steps[3].byte_idx, 222);
-        assert_eq!(worksheet.steps[2].source, "3::ax-1 |- ( ch -> ( ps -> ch ) )\n");
+        assert_eq!(
+            worksheet.steps[2].source,
+            "3::ax-1 |- ( ch -> ( ps -> ch ) )\n"
+        );
         println!("{:#?}", worksheet.diagnostics());
         assert_eq!(worksheet.diagnostics(), vec![]);
     }

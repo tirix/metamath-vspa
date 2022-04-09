@@ -83,8 +83,8 @@ impl VirtualFile {
             }
             Some("mmp") => {
                 info!("Opening MMP file {:?}", path.as_os_str());
-                FileContents::MMPFile(
-                    Arc::new(ProofWorksheet::from_string(text, db)
+                FileContents::MMPFile(Arc::new(
+                    ProofWorksheet::from_string(text, db)
                         .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?,
                 ))
             }

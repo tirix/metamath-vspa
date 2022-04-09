@@ -1,7 +1,7 @@
 //! Representation of a Proof Step
 use std::slice::Iter;
 
-use super::worksheet::{ Diag, Span };
+use super::worksheet::{Diag, Span};
 use lazy_static::lazy_static;
 use memchr::memchr;
 use metamath_knife::formula::Label;
@@ -47,7 +47,7 @@ impl Step {
         let grammar = database.grammar_result();
         let _provable = grammar.provable_typecode();
         let mut diags = vec![];
-        if let Some(caps) = PROOF_LINE.captures(&buf) {
+        if let Some(caps) = PROOF_LINE.captures(buf) {
             let label_span = caps
                 .get(1)
                 .expect("Regex did not return right number of captures")
@@ -57,13 +57,11 @@ impl Step {
                 let hyp_name = caps
                     .get(idx)
                     .expect("Regex did not return right number of captures");
-                hyps.push(
-                    if hyp_name.as_str() == "?" {
-                        None
-                    } else {
-                        Some(hyp_name.into())
-                    }
-                );
+                hyps.push(if hyp_name.as_str() == "?" {
+                    None
+                } else {
+                    Some(hyp_name.into())
+                });
             }
             let capture = caps
                 .get(caps.len() - 2)
@@ -71,7 +69,7 @@ impl Step {
             let label = nset
                 .lookup_label(capture.as_str().as_bytes())
                 .map(|l| l.atom);
-            if !label.is_some() {
+            if label.is_none() {
                 diags.push(Diag::UnknownTheoremLabel(capture.range()));
             }
             let formula_caps = caps
@@ -119,7 +117,7 @@ impl Step {
     #[must_use]
     /// The label of this step
     pub fn label(self, buf: &str) -> &str {
-        self.label_span.as_ref(buf)
+        self.label_span.into_ref(buf)
     }
 
     #[inline]

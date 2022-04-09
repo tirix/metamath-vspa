@@ -344,7 +344,9 @@ impl Server {
                         if self.conn.handle_shutdown(&req)? {
                             return Ok(true);
                         }
-                        SERVER.log_message(format!("Got request {}", req.method)).ok();
+                        SERVER
+                            .log_message(format!("Got request {}", req.method))
+                            .ok();
                         if let Some((id, req)) = parse_request(req)? {
                             let handler = RequestHandler { id };
                             handler.handle(req)?;
