@@ -27,6 +27,7 @@ use metamath_knife::Comparer;
 use metamath_knife::Database;
 use metamath_knife::Span;
 use metamath_knife::StatementRef;
+use xi_rope::Rope;
 
 struct InlayHintContext<'a> {
     wff: TypeCode,
@@ -35,7 +36,7 @@ struct InlayHintContext<'a> {
     var2bit: std::collections::HashMap<Atom, usize>,
     setvars: Vec<usize>,
     reader: NameReader<'a>,
-    source: FileContents,
+    source: Rope,
     hints: Vec<InlayHint>,
     scope: &'a Arc<ScopeResult>,
     nset: &'a Arc<Nameset>,
@@ -43,7 +44,7 @@ struct InlayHintContext<'a> {
 }
 
 impl<'a> InlayHintContext<'a> {
-    fn new(source: FileContents, db: &'a Database) -> Result<Self, ServerError> {
+    fn new(source: Rope, db: &'a Database) -> Result<Self, ServerError> {
         Ok(Self {
             hints: vec![],
             wff: db
@@ -103,7 +104,7 @@ impl<'a> InlayHintContext<'a> {
                     });
                     if !first {
                         self.hints.push(InlayHint {
-                            position: self.source.text.byte_to_lsp_position(
+                            position: self.source.byte_to_lsp_position(
                                 statement.math_span(token.index()).end as usize,
                             ),
                             label: label_parts.into(),
@@ -188,29 +189,32 @@ pub(crate) fn inlay_hints(
         return Ok(vec![]); // DV hints are disabled
     }
     let url = path.url().clone();
-    let source = vfs.source(path)?;
-    let root_node = OutlineNodeRef::root_node(&db);
-    if stmt_url(root_node.get_statement().address(), &db)? != url {
-        return Ok(vec![]); // Bail out if we are not in a MM source file
-    }
-    let first_byte_idx = source.text.lsp_position_to_byte(range.start);
-    let last_byte_idx = source.text.lsp_position_to_byte(range.end);
-    let first_statement =
-        find_smallest_outline_containing(&url, first_byte_idx as FilePos, root_node, &db)
-            .get_statement()
-            .address();
-    let last_statement =
-        find_smallest_outline_containing(&url, last_byte_idx as FilePos, root_node, &db)
-            .get_statement()
-            .address();
-    let mut context = InlayHintContext::new(source, &db)?;
-    if db.lt(&first_statement, &last_statement) {
-        for statement in db
-            .statements_range_address(first_statement..=last_statement)
-            .filter(|s| s.statement_type().is_assertion())
-        {
-            context.assertion_hints(statement);
+    if let FileContents::MMFile(source) = vfs.source(path, &db)? {
+        let root_node = OutlineNodeRef::root_node(&db);
+        if stmt_url(root_node.get_statement().address(), &db)? != url {
+            return Ok(vec![]); // Bail out if we are not in a MM source file
         }
+        let first_byte_idx = source.lsp_position_to_byte(range.start);
+        let last_byte_idx = source.lsp_position_to_byte(range.end);
+        let first_statement =
+            find_smallest_outline_containing(&url, first_byte_idx as FilePos, root_node, &db)
+                .get_statement()
+                .address();
+        let last_statement =
+            find_smallest_outline_containing(&url, last_byte_idx as FilePos, root_node, &db)
+                .get_statement()
+                .address();
+        let mut context = InlayHintContext::new(source, &db)?;
+        if db.lt(&first_statement, &last_statement) {
+            for statement in db
+                .statements_range_address(first_statement..=last_statement)
+                .filter(|s| s.statement_type().is_assertion())
+            {
+                context.assertion_hints(statement);
+            }
+        }
+        Ok(context.hints)
+    } else {
+        Ok(vec![])
     }
-    Ok(context.hints)
 }
