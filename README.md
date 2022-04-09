@@ -15,7 +15,6 @@ The server is still in an early experimental state. It is usable but many advanc
 Install [Visual Studio Code](https://code.visualstudio.com/), and install [rust](https://www.rust-lang.org/tools/install) if not already on your system.
 Then, install the Metamath LSP server. Until `metamath-knife` and `metamath-vspa` are delivered as crate.io crates, this has to be done manually:
 ```
-git clone https://github.com/david-a-wheeler/metamath-knife.git
 git clone https://github.com/tirix/metamath-vspa.git
 cargo install --path metamath-vspa/metamath-lsp
 ```
