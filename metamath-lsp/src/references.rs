@@ -18,7 +18,7 @@ pub(crate) fn references(
     vfs: &Vfs,
     db: Database,
 ) -> Result<Vec<Location>, ServerError> {
-    let text = vfs.source(path)?;
+    let text = vfs.source(path, &db)?;
     let (word, _range) = word_at(pos, text);
     let label = word.as_bytes();
     if let Some(stmt) = find_statement(label, &db) {

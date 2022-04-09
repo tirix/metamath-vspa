@@ -5,6 +5,7 @@ mod diag;
 mod hover;
 mod inlay_hints;
 mod outline;
+mod proof;
 mod references;
 mod rope_ext;
 mod server;
@@ -121,7 +122,7 @@ impl CondvarExt for std::sync::Condvar {
 }
 
 // fn setup_log(debug: bool) {
-//     let level = if  {
+//     let level = if debug {
 //         LevelFilter::Debug
 //     } else {
 //         LevelFilter::Info
