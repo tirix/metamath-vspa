@@ -366,8 +366,8 @@ impl ProofWorksheet {
             let step_len = find_step_start(new_text.as_bytes()).unwrap_or(new_text.len());
             let step_line_count = line_count(&new_text[..step_len]);
             let step_end = find_step_end(new_text[..step_len].as_bytes()).unwrap_or(step_len);
-            let source = new_text[..step_end].to_owned();
-            let step = Step::from_str(&source, &self.db);
+            let source = new_text[..step_len].to_owned();
+            let step = Step::from_str(&new_text[..step_end], &self.db);
             add_steps.push(StepInfo {
                 byte_idx,
                 line_idx,
@@ -474,7 +474,7 @@ impl ProofWorksheet {
                 r"^\$\( <MM> <PROOF_ASST> THEOREM=([0-9A-Za-z_\-\.]+)  LOC_AFTER=(\?|[0-9A-Za-z_\-\.]+)",
             ).unwrap();
         }
-        let eol = memchr::memchr(b'\n', self.top.as_bytes()).unwrap_or_else(|| self.top.len());
+        let eol = memchr::memchr(b'\n', self.top.as_bytes()).unwrap_or(self.top.len());
         let first_line = &self.top[0..eol];
         FIRST_LINE.captures(first_line).map(|caps| {
             let statement_name = caps.get(1).unwrap().as_str();
@@ -622,6 +622,21 @@ $=    ( wi ax-1 ax-mp ) ABADCABEF $.
 $)
 ";
 
+const TEST_PROOF_2: &str = "$( <MM> <PROOF_ASST> THEOREM=a1i  LOC_AFTER=?
+
+* Inference introducing an antecedent.  (Contributed by NM, 29-Dec-1992.)
+
+h1::a1i.1      |- ph
+2::ax-1        |- ( ph -> ( ps -> ph ) )
+*
+* x y
+qed:1,2:ax-mp  |- ( ps -> ph )
+
+$=    ( wi ax-1 ax-mp ) ABADCABEF $.
+
+$)
+    ";
+    
     #[test]
     fn parse_worksheet() {
         let db = &mkdb(TEST_DB);
@@ -668,6 +683,31 @@ $)
         );
         assert_eq!(worksheet.line(7), "qed:1,2:ax-mp  |- ( ps -> ph )");
         assert_eq!(worksheet.line(6), "    -> ( ps -> ph ) )");
+        println!("{:#?}", worksheet.diagnostics());
+        assert_eq!(worksheet.diagnostics(), vec![]);
+    }
+
+    #[test]
+    fn parse_worksheet_with_comments() {
+        let db = &mkdb(TEST_DB);
+        let worksheet = ProofWorksheet::from_string(TEST_PROOF_2.to_string(), db).unwrap();
+        assert_eq!(worksheet.steps.len(), 3);
+        assert_eq!(worksheet.steps[0].line_idx, 4);
+        assert_eq!(worksheet.steps[1].line_idx, 5);
+        assert_eq!(worksheet.steps[2].line_idx, 8);
+        assert_eq!(worksheet.steps[0].byte_idx, 122);
+        assert_eq!(worksheet.steps[1].byte_idx, 143);
+        assert_eq!(worksheet.steps[2].byte_idx, 192);
+        assert_eq!(
+            worksheet.steps[1].source,
+            "2::ax-1        |- ( ph -> ( ps -> ph ) )\n*\n* x y\n"
+        );
+        assert_eq!(
+            worksheet.steps[2].source,
+            "qed:1,2:ax-mp  |- ( ps -> ph )\n\n$=    ( wi ax-1 ax-mp ) ABADCABEF $.\n\n$)\n    "
+        );
+        assert_eq!(worksheet.line(6), "*");
+        assert_eq!(worksheet.line(7), "* x y");
         println!("{:#?}", worksheet.diagnostics());
         assert_eq!(worksheet.diagnostics(), vec![]);
     }
@@ -737,5 +777,116 @@ $)
         );
         println!("{:#?}", worksheet.diagnostics());
         assert_eq!(worksheet.diagnostics(), vec![]);
+    }
+
+    #[test]
+    fn worksheet_insert_middle() {
+        let db = &mkdb(TEST_DB);
+        let mut worksheet = ProofWorksheet::from_string(TEST_PROOF.to_string(), db).unwrap();
+        worksheet.apply_change(&TextDocumentContentChangeEvent {
+            range: Some(LspRange {
+                start: Position {
+                    line: 5,
+                    character: 20,
+                },
+                end: Position {
+                    line: 5,
+                    character: 22,
+                },
+            }),
+            range_length: None,
+            text: "( ps -> ch )".to_owned(),
+        });
+        println!("{:#?}", worksheet.steps);
+        assert_eq!(worksheet.steps.len(), 3);
+        assert_eq!(worksheet.steps[0].line_idx, 4);
+        assert_eq!(worksheet.steps[1].line_idx, 5);
+        assert_eq!(worksheet.steps[2].line_idx, 7);
+        assert_eq!(worksheet.steps[0].byte_idx, 122);
+        assert_eq!(worksheet.steps[1].byte_idx, 143);
+        assert_eq!(worksheet.steps[2].byte_idx, 198);
+        assert_eq!(
+            worksheet.steps[1].source,
+            "2::ax-1        |- ( ( ps -> ch )\n    -> ( ps -> ph ) )\n"
+        );
+        println!("{:#?}", worksheet.diagnostics());
+        assert_eq!(worksheet.diagnostics(), vec![]);
+    }
+
+    #[test]
+    fn worksheet_insert_newline_before_blank() {
+        let db = &mkdb(TEST_DB);
+        let mut worksheet = ProofWorksheet::from_string(TEST_PROOF.to_string(), db).unwrap();
+        worksheet.apply_change(&TextDocumentContentChangeEvent {
+            range: Some(LspRange {
+                start: Position {
+                    line: 6,
+                    character: 8,
+                },
+                end: Position {
+                    line: 6,
+                    character: 8,
+                },
+            }),
+            range_length: None,
+            text: "\n".to_owned(),
+        });
+        println!("{:#?}", worksheet.steps);
+        assert_eq!(worksheet.steps.len(), 3);
+        assert_eq!(worksheet.steps[0].line_idx, 4);
+        assert_eq!(worksheet.steps[1].line_idx, 5);
+        assert_eq!(worksheet.steps[2].line_idx, 8);
+        assert_eq!(worksheet.steps[0].byte_idx, 122);
+        assert_eq!(worksheet.steps[1].byte_idx, 143);
+        assert_eq!(worksheet.steps[2].byte_idx, 189);
+        assert_eq!(
+            worksheet.steps[1].source,
+            "2::ax-1        |- ( ph\n    -> (\n ps -> ph ) )\n"
+        );
+        println!("{:#?}", worksheet.diagnostics());
+        assert_eq!(worksheet.diagnostics(), vec![]);
+    }
+
+    #[test]
+    fn worksheet_insert_newline_before_char() {
+        let db = &mkdb(TEST_DB);
+        let mut worksheet = ProofWorksheet::from_string(TEST_PROOF.to_string(), db).unwrap();
+        worksheet.apply_change(&TextDocumentContentChangeEvent {
+            range: Some(LspRange {
+                start: Position {
+                    line: 6,
+                    character: 9,
+                },
+                end: Position {
+                    line: 6,
+                    character: 9,
+                },
+            }),
+            range_length: None,
+            text: "\n".to_owned(),
+        });
+        println!("{:#?}", worksheet.steps);
+        assert_eq!(worksheet.steps.len(), 4);
+        assert_eq!(worksheet.steps[0].line_idx, 4);
+        assert_eq!(worksheet.steps[1].line_idx, 5);
+        assert_eq!(worksheet.steps[2].line_idx, 7);
+        assert_eq!(worksheet.steps[3].line_idx, 8);
+        assert_eq!(worksheet.steps[0].byte_idx, 122);
+        assert_eq!(worksheet.steps[1].byte_idx, 143);
+        assert_eq!(worksheet.steps[2].byte_idx, 176);
+        assert_eq!(worksheet.steps[3].byte_idx, 189);
+        assert_eq!(
+            worksheet.steps[1].source,
+            "2::ax-1        |- ( ph\n    -> ( \n"
+        );
+        assert_eq!(
+            worksheet.steps[2].source,
+            "ps -> ph ) )\n"
+        );
+        let diags = worksheet.diagnostics();
+        println!("{:#?}", diags);
+        assert_eq!(diags.len(), 2);
+        assert_eq!(diags[0], mkdiag(6, 8, 6, 9, "Parsed statement too short"));
+        assert_eq!(diags[1], mkdiag(7, 0, 8, 0, "Could not parse proof line"));
     }
 }
