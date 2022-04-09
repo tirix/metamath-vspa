@@ -122,6 +122,12 @@ struct StepInfo {
     step: Step,
 }
 
+impl StepInfo {
+    fn last_byte_idx(&self) -> usize {
+        self.byte_idx + self.source.len()
+    }
+}
+
 /// If there is any space character at the beginning of a line,
 /// it is a follow-up of the previous line, and belongs to the same step.
 #[inline]
@@ -323,17 +329,21 @@ impl ProofWorksheet {
         // Get changed range
         let range = change.range.unwrap_or(LspRange {
             start: self.byte_to_lsp_position(0),
-            end: self.byte_to_lsp_position(
-                self.steps
-                    .iter()
-                    .last()
-                    .map_or(0, |s| s.byte_idx + s.source.len()),
-            ),
+            end: self
+                .byte_to_lsp_position(self.steps.iter().last().map_or(0, StepInfo::last_byte_idx)),
         });
 
         // Find out the first step and last step impacted.
-        let (first_step_idx, first_byte_idx) = self.step_at(range.start);
+        let (mut first_step_idx, mut first_byte_idx) = self.step_at(range.start);
         let (last_step_idx, last_byte_idx) = self.step_at(range.end);
+        // If the change text starts with a newline and is at the start of a step, it will be counted with the previous step
+        if first_byte_idx == 0
+            && change.text.starts_with('\n')
+            && first_step_idx.map_or(false, |i| i > 0)
+        {
+            first_step_idx = Some(first_step_idx.unwrap() - 1);
+            first_byte_idx = self.steps[first_step_idx.unwrap()].source.len();
+        }
         let first_source = first_step_idx.map_or(&self.top, |i| &self.step_info(i).source);
         let last_source = last_step_idx.map_or(&self.top, |i| &self.step_info(i).source);
 
@@ -383,9 +393,8 @@ impl ProofWorksheet {
         if let Some(end_step_idx) = last_step_idx {
             let add_byte_idx = byte_idx - start_byte_idx;
             let add_line_idx = line_idx - start_line_idx;
-            let sub_byte_idx = self.steps[end_step_idx].byte_idx
-                + self.steps[end_step_idx].source.len()
-                - self.steps[start_step_idx].byte_idx;
+            let sub_byte_idx =
+                self.steps[end_step_idx].last_byte_idx() - self.steps[start_step_idx].byte_idx;
             let sub_line_idx: usize = self.steps[end_step_idx].line_idx
                 + line_count(&self.steps[end_step_idx].source)
                 - self.steps[start_step_idx].line_idx;
@@ -622,7 +631,7 @@ $=    ( wi ax-1 ax-mp ) ABADCABEF $.
 $)
 ";
 
-const TEST_PROOF_2: &str = "$( <MM> <PROOF_ASST> THEOREM=a1i  LOC_AFTER=?
+    const TEST_PROOF_2: &str = "$( <MM> <PROOF_ASST> THEOREM=a1i  LOC_AFTER=?
 
 * Inference introducing an antecedent.  (Contributed by NM, 29-Dec-1992.)
 
@@ -636,7 +645,7 @@ $=    ( wi ax-1 ax-mp ) ABADCABEF $.
 
 $)
     ";
-    
+
     #[test]
     fn parse_worksheet() {
         let db = &mkdb(TEST_DB);
@@ -879,14 +888,45 @@ $)
             worksheet.steps[1].source,
             "2::ax-1        |- ( ph\n    -> ( \n"
         );
-        assert_eq!(
-            worksheet.steps[2].source,
-            "ps -> ph ) )\n"
-        );
+        assert_eq!(worksheet.steps[2].source, "ps -> ph ) )\n");
         let diags = worksheet.diagnostics();
         println!("{:#?}", diags);
         assert_eq!(diags.len(), 2);
         assert_eq!(diags[0], mkdiag(6, 8, 6, 9, "Parsed statement too short"));
         assert_eq!(diags[1], mkdiag(7, 0, 8, 0, "Could not parse proof line"));
+    }
+
+    #[test]
+    fn worksheet_insert_newline_at_step_start() {
+        let db = &mkdb(TEST_DB);
+        let mut worksheet = ProofWorksheet::from_string(TEST_PROOF.to_string(), db).unwrap();
+        worksheet.apply_change(&TextDocumentContentChangeEvent {
+            range: Some(LspRange {
+                start: Position {
+                    line: 5,
+                    character: 0,
+                },
+                end: Position {
+                    line: 5,
+                    character: 0,
+                },
+            }),
+            range_length: None,
+            text: "\n".to_owned(),
+        });
+        println!("{:#?}", worksheet.steps);
+        assert_eq!(worksheet.steps.len(), 3);
+        assert_eq!(worksheet.steps[0].line_idx, 4);
+        assert_eq!(worksheet.steps[1].line_idx, 6);
+        assert_eq!(worksheet.steps[2].line_idx, 8);
+        assert_eq!(worksheet.steps[0].byte_idx, 122);
+        assert_eq!(worksheet.steps[1].byte_idx, 144);
+        assert_eq!(worksheet.steps[2].byte_idx, 189);
+        assert_eq!(worksheet.steps[0].source, "h1::a1i.1      |- ph\n\n");
+        assert_eq!(
+            worksheet.steps[1].source,
+            "2::ax-1        |- ( ph\n    -> ( ps -> ph ) )\n"
+        );
+        assert_eq!(worksheet.diagnostics(), vec![]);
     }
 }
