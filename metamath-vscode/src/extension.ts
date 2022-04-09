@@ -2,8 +2,10 @@ import { commands, window, workspace, ExtensionContext, Range, Position, Selecti
 import * as fs from 'fs'; 
 import {
 	LanguageClient,
-	LanguageClientOptions,
 	ServerOptions,
+} from 'vscode-languageclient/node';
+import {
+	LanguageClientOptions,
 	ErrorAction,
 	CloseAction
 } from 'vscode-languageclient';
@@ -15,6 +17,7 @@ import {
 } from 'vscode-languageserver-protocol';
 import {
 	RequestType,
+	RequestType0,
 	NotificationType
 } from 'vscode-jsonrpc';
 
@@ -28,6 +31,10 @@ let client: LanguageClient;
 
 namespace ShowProofRequest {
 	export const type = new RequestType<string, string, void>('metamath/showProof');
+}
+
+namespace ToggleDvRequest {
+	export const type = new RequestType0<string, void>('metamath/toggleDv');
 }
 
 function startClient() {
@@ -74,6 +81,7 @@ export function activate(context: ExtensionContext) {
 		// For File search, see https://github.com/microsoft/vscode/issues/73524
 		// For Text search, see https://github.com/microsoft/vscode/issues/59921
 		commands.registerCommand('metamath.showProof', showProof),
+		commands.registerCommand('metamath.toggleDv', toggleDv),
 		commands.registerCommand('metamath.unify', unify),
 		commands.registerCommand('metamath.shutdownServer',
 			() => client.stop().then(() => {}, () => {})),
@@ -92,8 +100,13 @@ export function deactivate(): Thenable<void> | undefined {
 	return undefined;
 }
 
+function toggleDv() {
+	client.sendRequest(ToggleDvRequest.type).then(async () => {
+		window.activeTextEditor?.revealRange(window.activeTextEditor.visibleRanges[0]);
+	});
+}
+
 function showProof() {
-	window.showInformationMessage('Show proof!');
 	const editor = window.activeTextEditor;
 	let selectionRange: Range;
 	if(!editor) {

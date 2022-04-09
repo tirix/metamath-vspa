@@ -3,6 +3,7 @@
 mod definition;
 mod diag;
 mod hover;
+mod inlay_hints;
 mod outline;
 mod proof;
 mod references;
