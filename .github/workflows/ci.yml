@@ -10,6 +10,21 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  build-metamath-vscode:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set Node.js 14
+      uses: actions/setup-node@v1
+      with:
+        path: metamath-vscode
+        version: 14.x
+    - run: npm ci
+    - run: npm run compile
   build-metamath-lsp:
     name: Metamath LSP
     runs-on: ubuntu-latest
