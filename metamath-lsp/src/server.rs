@@ -9,6 +9,7 @@ use crate::inlay_hints::toggle_hints;
 use crate::outline::outline;
 use crate::references::references;
 use crate::show_proof::show_proof;
+use crate::types::ShowProofParams;
 use crate::vfs::FileContents;
 use crate::vfs::Vfs;
 use crate::Result;
@@ -37,14 +38,13 @@ enum RequestType {
     References(ReferenceParams),
     DocumentHighlight(DocumentHighlightParams),
     InlayHint(InlayHintParams),
-    ShowProof(String),
+    ShowProof(ShowProofParams),
     ToggleDv,
 }
 
 fn parse_request(
     Request { id, method, params }: Request,
 ) -> Result<Option<(RequestId, RequestType)>> {
-    SERVER.log_message(format!("Got request: {}", method)).ok();
     Ok(match method.as_str() {
         "textDocument/completion" => Some((id, RequestType::Completion(from_value(params)?))),
         "completionItem/resolve" => Some((id, RequestType::CompletionResolve(from_value(params)?))),
@@ -164,7 +164,9 @@ impl RequestHandler {
                 text_document: doc,
                 position,
             }) => self.response(definition(doc.uri.into(), position, vfs, db)),
-            RequestType::ShowProof(label) => self.response(show_proof(label, vfs, db)),
+            RequestType::ShowProof(ShowProofParams { label, .. }) => {
+                self.response(show_proof(label, vfs, db))
+            }
             RequestType::References(ReferenceParams {
                 text_document_position:
                     TextDocumentPositionParams {
@@ -280,7 +282,6 @@ impl Server {
     fn send_workspace_diagnostics(&self) {
         let guard = self.workspace.lock().unwrap();
         let workspace = guard.as_ref().unwrap();
-        SERVER.log_message("Sending diagnostics!".to_owned()).ok();
         for (uri, diagnostics) in &workspace.diags {
             SERVER
                 .send_diagnostics(uri.clone(), None, diagnostics.to_vec())
@@ -363,8 +364,7 @@ impl Server {
                         if self.conn.handle_shutdown(&req)? {
                             return Ok(true);
                         }
-                        SERVER
-                            .log_message(format!("Got request {}", req.method))
+                        self.log_message(format!("Got Request: {}", req.method))
                             .ok();
                         if let Some((id, req)) = parse_request(req)? {
                             let handler = RequestHandler { id };

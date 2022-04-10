@@ -23,14 +23,14 @@ import {
 
 let client: LanguageClient;
 
-// Using our own parameter type does not seem to work
-// interface ShowProofParams {
-//	textDocument: TextDocumentIdentifier;
-//	range: Range;
-// }
+interface ShowProofParams {
+	textDocument: TextDocumentIdentifier;
+	range: Range;
+	label: string;
+}
 
 namespace ShowProofRequest {
-	export const type = new RequestType<string, string, void>('metamath/showProof');
+	export const type = new RequestType<ShowProofParams, string, void>('metamath/showProof');
 }
 
 namespace ToggleDvRequest {
@@ -122,12 +122,12 @@ function showProof() {
 		selectionRange = editor.document.lineAt(editor.selection.start.line).range;
 	}
 	let label = editor.document.getText(selectionRange);
-	// 
-	// let params: ShowProofParams = {
-	// 	textDocument: TextDocumentIdentifier.create(editor.document.uri.toString()),
-	// 	range: selectionRange
-	// };
-	client.sendRequest(ShowProofRequest.type, label).then(async (content: any) => {
+	let params: ShowProofParams = {
+		textDocument: TextDocumentIdentifier.create(editor.document.uri.toString()),
+		range: selectionRange,
+		label: label
+	};
+	client.sendRequest(ShowProofRequest.type, params).then(async (content: any) => {
 		// Open a new document with the given MMP content
 		const doc = await workspace.openTextDocument({
 			language: 'metamath-proof',

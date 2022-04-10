@@ -10,6 +10,7 @@ mod references;
 mod rope_ext;
 mod server;
 mod show_proof;
+mod types;
 mod util;
 mod vfs;
 
