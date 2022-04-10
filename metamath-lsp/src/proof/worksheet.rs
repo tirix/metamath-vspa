@@ -5,8 +5,8 @@ use lsp_types::{
     TextDocumentContentChangeEvent,
 };
 use metamath_knife::diag::StmtParseError;
-use metamath_knife::statement::StatementAddress;
-use metamath_knife::{Database, StatementRef};
+use metamath_knife::statement::{StatementAddress, TokenPtr};
+use metamath_knife::{Database, Formula, StatementRef};
 use regex::{Match, Regex};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -15,7 +15,7 @@ use std::ops::{Index, Range};
 /// A Diagnostic
 #[derive(Clone, Debug)]
 pub enum Diag {
-    UnknownStepLabel(Range<usize>),
+    UnknownStepName(Range<usize>),
     UnknownTheoremLabel(Range<usize>),
     UnparseableFirstLine,
     UnparseableProofLine,
@@ -23,6 +23,11 @@ pub enum Diag {
     NotProvableStep,
     NoFormula,
     UnknownToken,
+    HypothesisDoesNotMatch,
+    ProofDoesNotMatch,
+    WrongHypCount { expected: usize, actual: usize },
+    UnificationFailed,
+    UnificationFailedForHyp(usize),
 }
 
 impl From<StmtParseError> for Diag {
@@ -30,7 +35,7 @@ impl From<StmtParseError> for Diag {
         Self::DatabaseDiagnostic(d)
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct Span(Range<usize>);
 
 impl From<Match<'_>> for Span {
@@ -42,14 +47,20 @@ impl From<Match<'_>> for Span {
 impl Span {
     #[inline]
     #[must_use]
+    pub fn new(start: usize, len: usize) -> Self {
+        Self(start..start + len)
+    }
+
+    #[inline]
+    #[must_use]
     pub fn until(end: usize) -> Self {
         Self(0..end)
     }
 
     #[inline]
     #[must_use]
-    pub fn into_ref(self, buf: &str) -> &str {
-        &buf[self.0]
+    pub fn as_ref<'a>(&self, buf: &'a str) -> &'a str {
+        &buf[self.0.clone()]
     }
 
     #[inline]
@@ -62,10 +73,16 @@ impl Span {
     }
 }
 
+impl From<&Span> for Range<usize> {
+    fn from(span: &Span) -> Self {
+        span.0.clone()
+    }
+}
+
 impl Diag {
     fn message(&self) -> String {
         match self {
-            Diag::UnknownStepLabel(_) => "Unknown step label".to_string(),
+            Diag::UnknownStepName(_) => "Unknown step name".to_string(),
             Diag::UnknownTheoremLabel(_) => "Unknown theorem".to_string(),
             Diag::UnparseableFirstLine => "Could not parse first line".to_string(),
             Diag::UnparseableProofLine => "Could not parse proof line".to_string(),
@@ -75,6 +92,17 @@ impl Diag {
             Diag::NoFormula => "No step formula found".to_string(),
             Diag::UnknownToken => "Unknown math token".to_string(),
             Diag::DatabaseDiagnostic(diag) => diag.label().to_string(),
+            Diag::HypothesisDoesNotMatch => {
+                "Hypothesis formula does not match database".to_string()
+            }
+            Diag::ProofDoesNotMatch => "Proof formula does not match database".to_string(),
+            Diag::WrongHypCount { expected, actual } => format!(
+                "Wrong hypotheses count: expected {expected}, got {actual}",
+                expected = expected,
+                actual = actual
+            ),
+            Diag::UnificationFailed => "Unification failed".to_string(),
+            Diag::UnificationFailedForHyp(_) => "Unification failed for hypothesis".to_string(),
         }
     }
 
@@ -85,7 +113,7 @@ impl Diag {
     fn get_range(&self, step_info: &StepInfo) -> Range<usize> {
         let step_span = step_info.byte_idx..step_info.byte_idx + step_info.source.len();
         match self {
-            Diag::UnknownStepLabel(range) | Diag::UnknownTheoremLabel(range) => Range {
+            Diag::UnknownStepName(range) | Diag::UnknownTheoremLabel(range) => Range {
                 start: step_info.byte_idx + range.start,
                 end: step_info.byte_idx + range.end,
             },
@@ -101,16 +129,22 @@ impl Diag {
                 end: step_info.step.formula_range(step_info.byte_idx).start + span.end as usize,
             },
             Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementNoTypeCode)
-            | Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementWrongTypeCode(_)) => {
-                step_info.step.formula_range(step_info.byte_idx)
-            }
+            | Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementWrongTypeCode(_))
+            | Diag::ProofDoesNotMatch
+            | Diag::HypothesisDoesNotMatch
+            | Diag::UnificationFailed => step_info.step.formula_range(step_info.byte_idx),
+            Diag::WrongHypCount { .. } => step_info.step.hyps_span().as_range(step_info.byte_idx),
+            Diag::UnificationFailedForHyp(hyp_idx) => step_info
+                .step
+                .hyp_ref_span(*hyp_idx)
+                .as_range(step_info.byte_idx),
         }
     }
 }
 
 /// Identifies a proof step in a worksheet.
 /// This is internal to the [ProofWorksheet]
-type StepIdx = usize;
+pub(crate) type StepIdx = usize;
 
 /// Information relative to a step
 /// The "source" string of each step is cloned to be stored in the step info.
@@ -181,9 +215,9 @@ fn line_count(s: &str) -> usize {
 #[derive(Debug, Default)]
 pub struct ProofWorksheet {
     /// The database used to build this worksheet
-    db: Database,
+    pub(crate) db: Database,
     /// The statement which is being proven
-    sadd: Option<StatementAddress>,
+    pub(crate) sadd: Option<StatementAddress>,
     /// A position in the database. Only statements before this one are allowed in a proof.
     loc_after: Option<StatementAddress>,
     /// Top line and first comment
@@ -191,7 +225,7 @@ pub struct ProofWorksheet {
     /// All the steps in this proof, in the order they appear
     pub(crate) steps: Vec<StepInfo>,
     /// The indices of the steps in this proof, referenced by their proof label (usually these are actually numbers, but any valid metamath label is allowed)
-    steps_by_name: HashMap<String, StepIdx>,
+    pub(crate) steps_by_name: HashMap<String, StepIdx>,
 }
 
 impl Index<&str> for ProofWorksheet {
@@ -349,9 +383,9 @@ impl ProofWorksheet {
 
         // So we can recover the full new text
         let mut new_text = String::new();
-        new_text.push_str(Span(0..first_byte_idx).into_ref(first_source));
+        new_text.push_str(Span(0..first_byte_idx).as_ref(first_source));
         new_text.push_str(&change.text);
-        new_text.push_str(Span(last_byte_idx..last_source.len()).into_ref(last_source));
+        new_text.push_str(Span(last_byte_idx..last_source.len()).as_ref(last_source));
         let mut new_text = new_text.as_str();
 
         // First handle the "top" part, until the first step.
@@ -406,11 +440,24 @@ impl ProofWorksheet {
             }
         }
 
+        // Remove the old steps from the reference table, and add the new ones
+        let old_step_range = first_step_idx.unwrap_or(0)..last_step_idx.map(|i| i + 1).unwrap_or(0);
+        for step_idx in old_step_range.clone() {
+            let step_name = self.step_name(step_idx).to_owned();
+            self.steps_by_name.remove(&step_name);
+        }
+
         // Finally, we can replace the new steps into our reference
-        self.steps.splice(
-            first_step_idx.unwrap_or(0)..last_step_idx.map(|i| i + 1).unwrap_or(0),
-            add_steps,
-        );
+        self.steps.splice(old_step_range, add_steps);
+
+        // And we update step names and validate all dependent steps
+        for step_idx in start_step_idx..self.steps.len() {
+            let step_name = self.step_name(step_idx).to_owned();
+            self.steps_by_name.insert(step_name, step_idx);
+            if let Err(diag) = self.steps[step_idx].step.validate(step_idx, self) {
+                self.steps[step_idx].step.push_diag(diag);
+            }
+        }
     }
 
     // /// Creates a new proof worksheet with the given source text
@@ -474,6 +521,40 @@ impl ProofWorksheet {
             }
         }
         diagnostics
+    }
+
+    pub(crate) fn step_name(&self, step_idx: usize) -> &str {
+        let step_info = &self.steps[step_idx];
+        step_info.step.name_span().as_ref(&step_info.source)
+    }
+
+    pub(crate) fn step_label(&self, step_idx: StepIdx) -> TokenPtr<'_> {
+        let step_info = &self.steps[step_idx];
+        (&step_info.step).label(&step_info.source).as_bytes()
+    }
+
+    pub(crate) fn hyp_name(&self, step_idx: StepIdx, hyp_idx: usize) -> &str {
+        let step_info = &self.steps[step_idx];
+        step_info
+            .step
+            .hyp_ref_span(hyp_idx)
+            .as_ref(&step_info.source)
+    }
+
+    pub(crate) fn step_formula(&self, step_idx: StepIdx) -> Option<&Formula> {
+        let step_info = &self.steps[step_idx];
+        step_info.step.formula()
+    }
+
+    pub(crate) fn step_stmt_formula(&self, step_idx: StepIdx) -> Result<&Formula, Diag> {
+        let unknown_theorem =
+            || Diag::UnknownTheoremLabel(self.steps[step_idx].step.name_span().into());
+        let label_name = self.step_label(step_idx);
+        let sref = self.db.statement(label_name).ok_or_else(unknown_theorem)?;
+        self.db
+            .stmt_parse_result()
+            .get_formula(&sref)
+            .ok_or_else(unknown_theorem)
     }
 
     // First line has changed, update theorem name, loc_after
