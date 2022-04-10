@@ -17,6 +17,7 @@ pub(crate) fn mkdb(text: &[u8]) -> Database {
         vec![("test.mm".to_owned(), text.to_owned())],
     );
     db.grammar_pass();
+    db.stmt_parse_pass();
     db
 }
 
@@ -265,8 +266,14 @@ fn worksheet_insert_middle() {
         worksheet.steps[1].source,
         "2::ax-1        |- ( ( ps -> ch )\n    -> ( ps -> ph ) )\n"
     );
-    println!("{:#?}", worksheet.diagnostics());
-    assert_eq!(worksheet.diagnostics(), vec![]);
+    let diags = worksheet.diagnostics();
+    println!("{:#?}", diags);
+    assert_eq!(diags.len(), 2);
+    assert_eq!(diags[0], mkdiag(5, 15, 7, 0, "Unification failed"));
+    assert_eq!(
+        diags[1],
+        mkdiag(7, 6, 7, 7, "Unification failed for hypothesis")
+    );
 }
 
 #[test]
@@ -338,9 +345,10 @@ fn worksheet_insert_newline_before_char() {
     assert_eq!(worksheet.steps[2].source, "ps -> ph ) )\n");
     let diags = worksheet.diagnostics();
     println!("{:#?}", diags);
-    assert_eq!(diags.len(), 2);
+    assert_eq!(diags.len(), 3);
     assert_eq!(diags[0], mkdiag(6, 8, 6, 9, "Parsed statement too short"));
-    assert_eq!(diags[1], mkdiag(7, 0, 8, 0, "Could not parse proof line"));
+    assert_eq!(diags[1], mkdiag(5, 0, 7, 0, "No step formula found"));
+    assert_eq!(diags[2], mkdiag(7, 0, 8, 0, "Could not parse proof line"));
 }
 
 #[test]
