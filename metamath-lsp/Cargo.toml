@@ -1,6 +1,6 @@
 [package]
 name = "mm-lsp-server"
-version = "0.1.0"
+version = "0.0.3"
 authors = ["Thierry Arnoux"]
 edition = "2021"
 description = "MM/MMP language server"
