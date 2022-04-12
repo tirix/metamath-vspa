@@ -110,12 +110,24 @@
 				"description": "Unify unproven statements the current file."
 			}
 		],
+		"keybindings": [
+			{
+			  "command": "metamath.unify",
+			  "key": "ctrl+u",
+			  "mac": "cmd+u"
+			}
+		],
 		"menus": {
 			"editor/context": [
 				{
 					"when": "resourceLangId == metamath || resourceLangId == metamath-proof",
 					"command": "metamath.showProof",
 					"group": "navigation"
+				},
+				{
+					"when": "resourceLangId == metamath-proof",
+					"command": "metamath.unify",
+					"group": "1_modification"
 				}
 			]
 		}

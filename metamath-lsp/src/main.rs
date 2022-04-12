@@ -11,6 +11,7 @@ mod rope_ext;
 mod server;
 mod show_proof;
 mod types;
+mod unify;
 mod util;
 mod vfs;
 

@@ -1,6 +1,7 @@
 //! Virtual File System
 //! Keeps track of the files opened, and their current in-memory state
 
+use crate::ServerError;
 use crate::proof::ProofWorksheet;
 use crate::rope_ext::read_to_rope;
 use crate::rope_ext::RopeExt;
@@ -38,6 +39,13 @@ impl FileContents {
         match self {
             FileContents::MMFile(text) => text.line(line_idx),
             FileContents::MMPFile(text) => text.line(line_idx),
+        }
+    }
+
+    pub(crate) fn as_proof(&self) -> Result<&Arc<ProofWorksheet>, ServerError> {
+        match self {
+            FileContents::MMFile(_) => Err("Wrong file type".into()),
+            FileContents::MMPFile(text) => Ok(text),
         }
     }
 }
