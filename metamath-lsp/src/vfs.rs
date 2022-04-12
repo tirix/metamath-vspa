@@ -1,12 +1,12 @@
 //! Virtual File System
 //! Keeps track of the files opened, and their current in-memory state
 
-use crate::ServerError;
 use crate::proof::ProofWorksheet;
 use crate::rope_ext::read_to_rope;
 use crate::rope_ext::RopeExt;
 use crate::util::FileRef;
 use crate::MutexExt;
+use crate::ServerError;
 use log::*;
 use lsp_types::Diagnostic;
 use lsp_types::Position;
