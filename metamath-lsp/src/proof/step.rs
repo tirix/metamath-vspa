@@ -1,7 +1,7 @@
 //! Representation of a Proof Step
 use std::slice::Iter;
 
-use crate::prover::{ProofStep, check_and_extend};
+use crate::prover::{check_and_extend, ProofStep};
 
 use super::worksheet::{Diag, Span, StepIdx};
 use super::ProofWorksheet;
@@ -266,6 +266,8 @@ impl Step {
     }
 
     fn as_sorry_proof_step(&self) -> Option<ProofStep> {
-        Some(ProofStep::Sorry { result: self.formula.as_ref()?.clone() })
+        Some(ProofStep::Sorry {
+            result: self.formula.as_ref()?.clone(),
+        })
     }
 }

@@ -1,6 +1,6 @@
 use metamath_knife::Label;
 
-use crate::prover::{Tactics, Context, TacticsResult, TacticsError, ProofStep};
+use crate::prover::{Context, ProofStep, Tactics, TacticsError, TacticsResult};
 
 /// The "Apply Theorem" tactics tries to apply the given theorem to the goal,
 /// and to match the essential hypotheses with all existing steps.
@@ -18,10 +18,13 @@ impl Tactics for Apply {
     }
 
     fn elaborate(&self, context: &mut Context) -> TacticsResult {
-        let (formula, essentials) = context.get_theorem_formulas(self.0).ok_or(TacticsError::from("Unknown theorem"))?;
-        let substitutions = context.goal()
+        let (formula, essentials) = context
+            .get_theorem_formulas(self.0)
+            .ok_or_else(|| TacticsError::from("Unknown theorem"))?;
+        let substitutions = context
+            .goal()
             .unify(&formula)
-            .ok_or(TacticsError::from("Unification failed"))?;
+            .ok_or_else(|| TacticsError::from("Unification failed"))?;
         let mut hyp_steps = vec![];
         for (_, ess_fmla) in essentials.into_iter() {
             //let ess_sref = context.db.statement_by_label(label).ok_or(TacticsError::from("Unknown essential"))?;
@@ -31,7 +34,11 @@ impl Tactics for Apply {
             let formula = ess_fmla.substitute(&substitutions);
             hyp_steps.push(ProofStep::sorry(formula)); // TODO, recursively try to match with existing steps rather than "sorry"
         }
-        Ok(ProofStep::apply(self.0, hyp_steps.into_boxed_slice(), context.goal().clone(), substitutions))
+        Ok(ProofStep::apply(
+            self.0,
+            hyp_steps.into_boxed_slice(),
+            context.goal().clone(),
+            substitutions,
+        ))
     }
 }
-

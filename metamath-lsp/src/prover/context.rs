@@ -1,31 +1,42 @@
-use std::sync::Arc;
 use crate::prover::Tactics;
-use metamath_knife::Database;
-use metamath_knife::StatementType;
 use metamath_knife::as_str;
 use metamath_knife::formula::Substitutions;
-use metamath_knife::Formula;
-use metamath_knife::Label;
 use metamath_knife::proof::ProofTreeArray;
 use metamath_knife::scopeck::FrameRef;
 use metamath_knife::verify::ProofBuilder;
+use metamath_knife::Database;
+use metamath_knife::Formula;
+use metamath_knife::Label;
+use metamath_knife::StatementType;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use super::proof_step::ProofStep;
 
 /// A type for representing theorem essential hypotheses: a label and the corresponding formula.
 pub struct Hypotheses(Box<[(Label, Formula)]>);
 
+type HypothesesIter<'a> = std::iter::Map<
+    std::slice::Iter<'a, (Label, Formula)>,
+    for<'r> fn(&'r (Label, Formula)) -> ProofStep,
+>;
+
 impl Hypotheses {
-    fn known_steps_iter(&self) -> std::iter::Map<std::slice::Iter<'_, (Label, Formula)>, for<'r> fn(&'r (Label, Formula)) -> ProofStep> {
+    fn known_steps_iter(&self) -> HypothesesIter {
         fn build_hyp(t: &(Label, Formula)) -> ProofStep {
-            ProofStep::Hyp { label: t.0, result: t.1.clone() }
+            ProofStep::Hyp {
+                label: t.0,
+                result: t.1.clone(),
+            }
         }
-        self.0.iter().map(build_hyp as fn(t: &(Label, Formula)) -> ProofStep)
+        self.0
+            .iter()
+            .map(build_hyp as fn(t: &(Label, Formula)) -> ProofStep)
     }
 
     fn from_frame(frame: FrameRef) -> Self {
-        let hyp_vec: Vec<(Label, Formula)> = frame.essentials().map(|(l,f)| { (l, f.clone()) }).collect();
+        let hyp_vec: Vec<(Label, Formula)> =
+            frame.essentials().map(|(l, f)| (l, f.clone())).collect();
         Self(hyp_vec.into_boxed_slice())
     }
 }
@@ -124,15 +135,18 @@ impl<'a> Context {
     }
 
     pub fn get_label_variable(&self, id: String) -> Option<Label> {
-        self.label_variables.get(&id).map(|l| *l)
+        self.label_variables.get(&id).copied()
     }
     pub fn get_tactics_variable(&self, id: String) -> Option<Arc<dyn Tactics>> {
-        self.tactics_variables.get(&id).map(|t| t.clone())
+        self.tactics_variables.get(&id).cloned()
     }
 
     /// Returns whether the given theorem is not allowed (too far down the database)
     pub fn loc_after(&self, theorem: Label) -> bool {
-        self.db.cmp(&theorem, &self.loc_after).unwrap_or(std::cmp::Ordering::Greater) != std::cmp::Ordering::Less
+        self.db
+            .cmp(&theorem, &self.loc_after)
+            .unwrap_or(std::cmp::Ordering::Greater)
+            != std::cmp::Ordering::Less
     }
 
     pub fn goal(&self) -> &Formula {
@@ -157,19 +171,25 @@ impl<'a> Context {
         self.statements_until(self.loc_after).unwrap()
     }
 
-    pub fn statements_until(&self, theorem: Label) -> Option<impl Iterator<Item = (Label, Formula, Hypotheses)> + '_> {
+    pub fn statements_until(
+        &self,
+        theorem: Label,
+    ) -> Option<impl Iterator<Item = (Label, Formula, Hypotheses)> + '_> {
         let nset = self.db.name_result().clone();
-        let iter = self.db.statements_range(.. theorem).filter_map(move |sref| {
-            match sref.statement_type() {
+        let iter = self
+            .db
+            .statements_range(..theorem)
+            .filter_map(move |sref| match sref.statement_type() {
                 StatementType::Axiom | StatementType::Provable => {
                     let name = sref.label();
                     let label = nset.lookup_label(name)?.atom;
                     let (formula, hyps) = self.get_theorem_formulas(label)?;
                     Some((label, formula, hyps))
-                },
+                }
                 _ => None,
-            }
-        }).collect::<Vec<_>>().into_iter();
+            })
+            .collect::<Vec<_>>()
+            .into_iter();
         Some(iter)
     }
 
@@ -184,7 +204,9 @@ impl<'a> Context {
         let nset = self.db.name_result().clone();
         let token = nset.atom_name(label);
         let address = nset.lookup_label(token)?.address;
-        let range = formula.as_ref(&self.db).append_to_stack_buffer(stack_buffer);
+        let range = formula
+            .as_ref(&self.db)
+            .append_to_stack_buffer(stack_buffer);
         Some(arr.build(address, Default::default(), stack_buffer, range))
     }
 
@@ -200,17 +222,22 @@ impl<'a> Context {
     ) -> Option<usize> {
         let token = self.db.name_result().atom_name(label);
         let address = self.db.name_result().lookup_label(token)?.address;
-        let range = formula.as_ref(&self.db).append_to_stack_buffer(stack_buffer);
+        let range = formula
+            .as_ref(&self.db)
+            .append_to_stack_buffer(stack_buffer);
         let frame = self.db.get_frame(label)?;
         let mut hyps = vec![];
         for label in frame.floating() {
             let formula = &substitutions.get(label).unwrap_or_else(|| {
-                panic!("While building proof using {}: No substitution for {}", as_str(token), as_str(self.db.name_result().atom_name(label)));
+                panic!(
+                    "While building proof using {}: No substitution for {}",
+                    as_str(token),
+                    as_str(self.db.name_result().atom_name(label))
+                );
             });
-            let proof_tree_index = formula.as_ref(&self.db).build_syntax_proof::<usize, Vec<usize>>(
-                stack_buffer,
-                arr,
-            );
+            let proof_tree_index = formula
+                .as_ref(&self.db)
+                .build_syntax_proof::<usize, Vec<usize>>(stack_buffer, arr);
             hyps.push(proof_tree_index);
         }
         hyps.extend(mand_hyps);

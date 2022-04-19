@@ -1,4 +1,4 @@
-use crate::prover::{Tactics, Context, TacticsResult, TacticsError};
+use crate::prover::{Context, Tactics, TacticsError, TacticsResult};
 
 /// The assumption tactics attemps to unify the goal with all assumptions in the context.
 pub struct Assumption;
@@ -12,4 +12,3 @@ impl Tactics for Assumption {
         Err(TacticsError::from("Not implemented!"))
     }
 }
-

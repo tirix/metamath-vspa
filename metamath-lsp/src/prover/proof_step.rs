@@ -8,16 +8,16 @@ use super::Context;
 #[derive(Clone, Debug)]
 /// One step in a proof
 pub enum ProofStep {
-	Apply {
-	    apply: Label,
-	    apply_on: Box<[ProofStep]>,
-	    result: Formula,
-	    substitutions: Box<Substitutions>,
-	},
-	Hyp {
-		label: Label,
-		result: Formula,
-	},
+    Apply {
+        apply: Label,
+        apply_on: Box<[ProofStep]>,
+        result: Formula,
+        substitutions: Box<Substitutions>,
+    },
+    Hyp {
+        label: Label,
+        result: Formula,
+    },
     Sorry {
         result: Formula,
     },
@@ -38,14 +38,12 @@ impl ProofStep {
         }
     }
 
-    pub fn sorry(
-        result: Formula,
-    ) -> Self {
+    pub fn sorry(result: Formula) -> Self {
         ProofStep::Sorry { result }
     }
 
     pub fn hyp(label: Label, result: Formula) -> Self {
-    	ProofStep::Hyp { label, result }
+        ProofStep::Hyp { label, result }
     }
 
     pub fn result(&self) -> &Formula {
@@ -62,34 +60,31 @@ impl ProofStep {
         arr: &mut ProofTreeArray,
         context: &Context,
     ) -> Option<usize> {
-    	match self {
-    		ProofStep::Apply { apply, apply_on, result, substitutions } => {
-		        let hyps = apply_on
-		            .iter()
-		            .map(|step| step.add_to_proof_tree_array(stack_buffer, arr, context))
-		            .flatten()
-		            .collect();
+        match self {
+            ProofStep::Apply {
+                apply,
+                apply_on,
+                result,
+                substitutions,
+            } => {
+                let hyps = apply_on
+                    .iter()
+                    .filter_map(|step| step.add_to_proof_tree_array(stack_buffer, arr, context))
+                    .collect();
                 context.build_proof_step(
-		            *apply,
-		            result.clone(),
-		            hyps,
-		            &substitutions,
-		            stack_buffer,
-		            arr,
-		        )
-    		},
-    		ProofStep::Hyp { label, result } => {
-                context.build_proof_hyp(
-                    *label,
+                    *apply,
                     result.clone(),
+                    hyps,
+                    substitutions,
                     stack_buffer,
                     arr,
                 )
-    		},
-            ProofStep::Sorry { .. } => {
-                None
             }
-    	}
+            ProofStep::Hyp { label, result } => {
+                context.build_proof_hyp(*label, result.clone(), stack_buffer, arr)
+            }
+            ProofStep::Sorry { .. } => None,
+        }
     }
 
     pub fn as_proof_tree_array(&self, context: &Context) -> ProofTreeArray {

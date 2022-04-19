@@ -1,7 +1,7 @@
-use crate::prover::{Tactics, Context, TacticsResult, ProofStep};
+use crate::prover::{Context, ProofStep, Tactics, TacticsResult};
 
-/// This is the default "sorry" tactics. 
-/// It provides a temporary 
+/// This is the default "sorry" tactics.
+/// It provides a temporary
 /// An admission of failure, or lazyness to provide a proof.
 pub struct Sorry;
 

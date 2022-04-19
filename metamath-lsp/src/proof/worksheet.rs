@@ -1,6 +1,6 @@
-use crate::ServerError;
 use crate::proof::step::Step;
 use crate::prover::{Context, ProofStep, TacticsError};
+use crate::ServerError;
 use lazy_static::lazy_static;
 use lsp_types::{
     Diagnostic as LspDiagnostic, DiagnosticSeverity, Position, Range as LspRange,
@@ -8,7 +8,7 @@ use lsp_types::{
 };
 use metamath_knife::diag::StmtParseError;
 use metamath_knife::statement::TokenPtr;
-use metamath_knife::{Database, Formula, Label, as_str};
+use metamath_knife::{as_str, Database, Formula, Label};
 use regex::{Match, Regex};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -492,7 +492,6 @@ impl ProofWorksheet {
         self.last_name = Option::max(self.last_name, new_name);
     }
 
-
     // /// Creates a new proof worksheet with the given source text
     // fn new(db: &Database, source: String) -> Self {
     //     let mut worksheet = ProofWorksheet {
@@ -604,11 +603,13 @@ impl ProofWorksheet {
             let loc_after_name = caps.get(2).unwrap().as_str();
             self.label = self
                 .db
-                .name_pass().lookup_label(statement_name.as_bytes())
+                .name_pass()
+                .lookup_label(statement_name.as_bytes())
                 .map(|l| l.atom);
             self.loc_after = self
                 .db
-                .name_pass().lookup_label(loc_after_name.as_bytes())
+                .name_pass()
+                .lookup_label(loc_after_name.as_bytes())
                 .map(|l| l.atom);
         })
     }
@@ -618,41 +619,86 @@ impl ProofWorksheet {
         let loc_after = match self.loc_after {
             Some(l) => l,
             None => {
-                let last_sref = self.db.statements().filter(|sref| sref.is_assertion()).last().ok_or_else(|| ServerError::from("No statement in the database"))?;
-                self.db.name_result().lookup_label(last_sref.label()).expect("Last Statement shall exist").atom
+                let last_sref = self
+                    .db
+                    .statements()
+                    .filter(|sref| sref.is_assertion())
+                    .last()
+                    .ok_or_else(|| ServerError::from("No statement in the database"))?;
+                self.db
+                    .name_result()
+                    .lookup_label(last_sref.label())
+                    .expect("Last Statement shall exist")
+                    .atom
             }
         };
-        let goal = goal_step.step.formula().ok_or_else(|| ServerError::from("Could not parse goal formula"))?.clone();
+        let goal = goal_step
+            .step
+            .formula()
+            .ok_or_else(|| ServerError::from("Could not parse goal formula"))?
+            .clone();
         let mut known_steps = vec![];
-        for (step_idx, step_info) in self.steps.iter().enumerate().filter(|(_, s)| s.line_idx < goal_step.line_idx) {
+        for (step_idx, step_info) in self
+            .steps
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.line_idx < goal_step.line_idx)
+        {
             if let Some(result) = step_info.step.formula() {
                 known_steps.push((step_idx, ProofStep::sorry(result.clone())));
             }
         }
-        Ok(Context::new(self.db.clone(), loc_after, goal, known_steps, self.steps.len()))
+        Ok(Context::new(
+            self.db.clone(),
+            loc_after,
+            goal,
+            known_steps,
+            self.steps.len(),
+        ))
     }
 
-    pub (crate) fn append_proof_text(&self, proof_step: &ProofStep, next_name: &mut usize, buffer: &mut String) {
+    pub(crate) fn append_proof_text(
+        &self,
+        proof_step: &ProofStep,
+        next_name: &mut usize,
+        buffer: &mut String,
+    ) {
         match proof_step {
-            ProofStep::Apply { apply, apply_on, result, .. } => {
+            ProofStep::Apply {
+                apply,
+                apply_on,
+                result,
+                ..
+            } => {
                 let mut hyp_names = vec![];
                 for step in apply_on.iter() {
                     hyp_names.push(next_name.to_string());
                     self.append_proof_text(step, next_name, buffer);
                 }
-                buffer.push_str(&format!("{}:{}:{} {}\n", next_name, hyp_names.join(","), as_str(self.db.name_result().atom_name(*apply)), result.as_ref(&self.db)));
-            },
+                buffer.push_str(&format!(
+                    "{}:{}:{} {}\n",
+                    next_name,
+                    hyp_names.join(","),
+                    as_str(self.db.name_result().atom_name(*apply)),
+                    result.as_ref(&self.db)
+                ));
+            }
             ProofStep::Hyp { label, result } => {
-                buffer.push_str(&format!("h{}::{} {}\n", next_name, as_str(self.db.name_result().atom_name(*label)), result.as_ref(&self.db)));
-            },
+                buffer.push_str(&format!(
+                    "h{}::{} {}\n",
+                    next_name,
+                    as_str(self.db.name_result().atom_name(*label)),
+                    result.as_ref(&self.db)
+                ));
+            }
             ProofStep::Sorry { result } => {
                 buffer.push_str(&format!("{}:: {}\n", next_name, result.as_ref(&self.db)));
-            },
+            }
         }
         *next_name += 10;
     }
 
-    pub (crate) fn proof_text(&self, proof_step: &ProofStep) -> String {
+    pub(crate) fn proof_text(&self, proof_step: &ProofStep) -> String {
         // Find the next available name
         let mut next_name = self.last_name.unwrap_or(0) + 10;
         let mut buffer = String::new();

@@ -1,5 +1,5 @@
 //! The proof assistant itself.
-//! 
+//!
 //! This module includes structures used to represent proofs, proof steps, and tactics to create the proof steps.
 
 mod context;
@@ -32,7 +32,9 @@ impl Display for TacticsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TacticsError::Error(string) => f.write_str(string),
-            TacticsError::UnificationFailedForHyp(hyp_idx) => f.write_fmt(format_args!("Unification failed for hypothesis {}", hyp_idx)),
+            TacticsError::UnificationFailedForHyp(_) => {
+                f.write_str("Unification failed for hypothesis")
+            }
         }
     }
 }

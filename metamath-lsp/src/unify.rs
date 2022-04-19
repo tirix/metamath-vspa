@@ -1,8 +1,8 @@
 //! This is handler for the "Unify" command
 //! It tries to apply the best fitting tactics, based on the context.
-use crate::prover::Tactics;
-use crate::prover::tactics::Assumption;
 use crate::prover::tactics::Apply;
+use crate::prover::tactics::Assumption;
+use crate::prover::Tactics;
 use crate::util::FileRef;
 use crate::vfs::Vfs;
 use crate::ServerError;
@@ -17,7 +17,9 @@ pub(crate) fn unify(
 ) -> Result<TextEdit, ServerError> {
     let source = vfs.source(path, &db)?;
     let worksheet = source.as_proof()?;
-    let step_info = worksheet.step_at_line(pos.line as usize).ok_or(ServerError::from("No step to unify"))?;
+    let step_info = worksheet
+        .step_at_line(pos.line as usize)
+        .ok_or_else(|| ServerError::from("No step to unify"))?;
     let mut context = worksheet.build_context(step_info)?;
     let start_pos = worksheet.byte_to_lsp_position(step_info.byte_idx);
     let end_pos = worksheet.byte_to_lsp_position(step_info.last_byte_idx());
