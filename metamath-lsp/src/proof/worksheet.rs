@@ -1,12 +1,14 @@
+use crate::ServerError;
 use crate::proof::step::Step;
+use crate::prover::{Context, ProofStep, TacticsError};
 use lazy_static::lazy_static;
 use lsp_types::{
     Diagnostic as LspDiagnostic, DiagnosticSeverity, Position, Range as LspRange,
     TextDocumentContentChangeEvent,
 };
 use metamath_knife::diag::StmtParseError;
-use metamath_knife::statement::{StatementAddress, TokenPtr};
-use metamath_knife::{Database, Formula, StatementRef};
+use metamath_knife::statement::TokenPtr;
+use metamath_knife::{Database, Formula, Label, as_str};
 use regex::{Match, Regex};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -26,6 +28,7 @@ pub enum Diag {
     HypothesisDoesNotMatch,
     ProofDoesNotMatch,
     WrongHypCount { expected: usize, actual: usize },
+    TactisError(TacticsError),
     UnificationFailed,
     UnificationFailedForHyp(usize),
 }
@@ -35,6 +38,13 @@ impl From<StmtParseError> for Diag {
         Self::DatabaseDiagnostic(d)
     }
 }
+
+impl From<TacticsError> for Diag {
+    fn from(e: TacticsError) -> Self {
+        Diag::TactisError(e)
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Span(Range<usize>);
 
@@ -92,6 +102,7 @@ impl Diag {
             Diag::NoFormula => "No step formula found".to_string(),
             Diag::UnknownToken => "Unknown math token".to_string(),
             Diag::DatabaseDiagnostic(diag) => diag.label().to_string(),
+            Diag::TactisError(t) => t.to_string(),
             Diag::HypothesisDoesNotMatch => {
                 "Hypothesis formula does not match database".to_string()
             }
@@ -134,10 +145,12 @@ impl Diag {
             | Diag::HypothesisDoesNotMatch
             | Diag::UnificationFailed => step_info.step.formula_range(step_info.byte_idx),
             Diag::WrongHypCount { .. } => step_info.step.hyps_span().as_range(step_info.byte_idx),
-            Diag::UnificationFailedForHyp(hyp_idx) => step_info
+            Diag::TactisError(TacticsError::UnificationFailedForHyp(hyp_idx))
+            | Diag::UnificationFailedForHyp(hyp_idx) => step_info
                 .step
                 .hyp_ref_span(*hyp_idx)
                 .as_range(step_info.byte_idx),
+            Diag::TactisError(_) => step_span,
         }
     }
 }
@@ -157,8 +170,19 @@ pub(crate) struct StepInfo {
 }
 
 impl StepInfo {
-    fn last_byte_idx(&self) -> usize {
+    pub fn last_byte_idx(&self) -> usize {
         self.byte_idx + self.source.len()
+    }
+
+    pub fn label(&self) -> &str {
+        self.step.label(&self.source)
+    }
+
+    #[inline]
+    #[must_use]
+    /// The label of this step
+    pub fn get_label(&self, db: &Database) -> Option<Label> {
+        Some(db.name_result().lookup_label(self.label().as_bytes())?.atom)
     }
 }
 
@@ -217,11 +241,13 @@ pub struct ProofWorksheet {
     /// The database used to build this worksheet
     pub(crate) db: Database,
     /// The statement which is being proven
-    pub(crate) sadd: Option<StatementAddress>,
+    pub(crate) label: Option<Label>,
     /// A position in the database. Only statements before this one are allowed in a proof.
-    loc_after: Option<StatementAddress>,
+    loc_after: Option<Label>,
     /// Top line and first comment
     top: String,
+    /// Last numerical proof step name, if any
+    last_name: Option<usize>,
     /// All the steps in this proof, in the order they appear
     pub(crate) steps: Vec<StepInfo>,
     /// The indices of the steps in this proof, referenced by their proof label (usually these are actually numbers, but any valid metamath label is allowed)
@@ -412,6 +438,7 @@ impl ProofWorksheet {
             let step_end = find_step_end(new_text[..step_len].as_bytes()).unwrap_or(step_len);
             let source = new_text[..step_len].to_owned();
             let step = Step::from_str(&new_text[..step_end], &self.db);
+            self.update_last_name(&step, &source);
             add_steps.push(StepInfo {
                 byte_idx,
                 line_idx,
@@ -459,6 +486,12 @@ impl ProofWorksheet {
             }
         }
     }
+
+    fn update_last_name(&mut self, step: &Step, source: &str) {
+        let new_name = step.name_span().as_ref(source).parse::<usize>().ok();
+        self.last_name = Option::max(self.last_name, new_name);
+    }
+
 
     // /// Creates a new proof worksheet with the given source text
     // fn new(db: &Database, source: String) -> Self {
@@ -569,68 +602,61 @@ impl ProofWorksheet {
         FIRST_LINE.captures(first_line).map(|caps| {
             let statement_name = caps.get(1).unwrap().as_str();
             let loc_after_name = caps.get(2).unwrap().as_str();
-            self.sadd = self
+            self.label = self
                 .db
-                .statement(statement_name.as_bytes())
-                .map(StatementRef::address);
+                .name_pass().lookup_label(statement_name.as_bytes())
+                .map(|l| l.atom);
             self.loc_after = self
                 .db
-                .statement(loc_after_name.as_bytes())
-                .map(StatementRef::address);
+                .name_pass().lookup_label(loc_after_name.as_bytes())
+                .map(|l| l.atom);
         })
     }
 
-    // /// Update the internation representation of the proof, for the lines changed.
-    // pub fn update(&mut self, mut line_nums: Range<usize>) {
-    //     if line_nums.contains(&0) {
-    //         self.update_first_line();
-    //     }
+    pub(crate) fn build_context(&self, goal_step: &StepInfo) -> Result<Context, ServerError> {
+        // if no "loc_after" is provided, assume last statement in the database
+        let loc_after = match self.loc_after {
+            Some(l) => l,
+            None => {
+                let last_sref = self.db.statements().filter(|sref| sref.is_assertion()).last().ok_or_else(|| ServerError::from("No statement in the database"))?;
+                self.db.name_result().lookup_label(last_sref.label()).expect("Last Statement shall exist").atom
+            }
+        };
+        let goal = goal_step.step.formula().ok_or_else(|| ServerError::from("Could not parse goal formula"))?.clone();
+        let mut known_steps = vec![];
+        for (step_idx, step_info) in self.steps.iter().enumerate().filter(|(_, s)| s.line_idx < goal_step.line_idx) {
+            if let Some(result) = step_info.step.formula() {
+                known_steps.push((step_idx, ProofStep::sorry(result.clone())));
+            }
+        }
+        Ok(Context::new(self.db.clone(), loc_after, goal, known_steps, self.steps.len()))
+    }
 
-    //     // Adjust the first line to the line with label
-    //     while line_nums.start > 0 && is_followup_line(&self.source, line_nums.start) {
-    //         line_nums.start -= 1;
-    //     }
-    //     if line_nums.start == 0 {
-    //         line_nums.start = 1;
-    //         while is_followup_line(&self.source, line_nums.start) {
-    //             line_nums.start += 1;
-    //         }
-    //     }
+    pub (crate) fn append_proof_text(&self, proof_step: &ProofStep, next_name: &mut usize, buffer: &mut String) {
+        match proof_step {
+            ProofStep::Apply { apply, apply_on, result, .. } => {
+                let mut hyp_names = vec![];
+                for step in apply_on.iter() {
+                    hyp_names.push(next_name.to_string());
+                    self.append_proof_text(step, next_name, buffer);
+                }
+                buffer.push_str(&format!("{}:{}:{} {}\n", next_name, hyp_names.join(","), as_str(self.db.name_result().atom_name(*apply)), result.as_ref(&self.db)));
+            },
+            ProofStep::Hyp { label, result } => {
+                buffer.push_str(&format!("h{}::{} {}\n", next_name, as_str(self.db.name_result().atom_name(*label)), result.as_ref(&self.db)));
+            },
+            ProofStep::Sorry { result } => {
+                buffer.push_str(&format!("{}:: {}\n", next_name, result.as_ref(&self.db)));
+            },
+        }
+        *next_name += 10;
+    }
 
-    //     // Adjust the last line to include followup lines
-    //     while line_nums.end < self.source.len_lines() - 1
-    //         && is_followup_line(&self.source, line_nums.end)
-    //     {
-    //         line_nums.end += 1;
-    //     }
-
-    //     // Remove the steps at the previous lines, and the associated errors
-    //     // TODO
-
-    //     // Actually attempt to parse the new lines
-    //     let nset = self.db.name_result().clone();
-    //     let grammar = self.db.grammar_result().clone();
-    //     let mut current_line = vec![];
-    //     let mut step_lines = Range::default();
-    //     for line_num in line_nums {
-    //         if is_followup_line(&self.source, line_num) || current_line.is_empty() {
-    //             // This is a follow-up line, just concatenate it.
-    //         } else if current_line[0] == b'*' {
-    //             // Comment, skip.
-    //             info!("Skipping comment line {}", as_str(&current_line));
-    //             current_line = vec![]; // TODO find how to empty
-    //             step_lines = line_num..line_num;
-    //         } else {
-    //             let step = Step::from_str(as_str(&current_line))?;
-    //             self.steps_by_line
-    //                 .insert(step.lines.start, step.name);
-    //             self.steps_by_name.insert(step_name.to_string(), step);
-    //             current_line = vec![]; // TODO find how to empty
-    //             step_lines = line_num..line_num;
-    //         }
-    //         // TODO optimize!
-    //         write!(current_line, "{} ", self.source.line(line_num).to_string()).ok();
-    //         step_lines.end = line_num + 1;
-    //     }
-    // }
+    pub (crate) fn proof_text(&self, proof_step: &ProofStep) -> String {
+        // Find the next available name
+        let mut next_name = self.last_name.unwrap_or(0) + 10;
+        let mut buffer = String::new();
+        self.append_proof_text(proof_step, &mut next_name, &mut buffer);
+        buffer
+    }
 }

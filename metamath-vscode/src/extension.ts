@@ -148,10 +148,11 @@ function unify(editor: TextEditor, editBuilder: TextEditorEdit, ...args: any[]) 
 	};
 	client.sendRequest(UnifyRequest.type, params).then(async(response: TextEdit) => {
 		const edit = client.protocol2CodeConverter.asTextEdit(response);
-		window.showInformationMessage('Hello World from Metamath!' + edit.newText);
 		//editBuilder.replace(edit.range, edit.newText);
 		editor.edit((editBuilder) => {
 			editBuilder.replace(edit.range, edit.newText);
 		});
+	}, async (error: any) => {
+		console.log("Unification error:" + error);
 	});
 }

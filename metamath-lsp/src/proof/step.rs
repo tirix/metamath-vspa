@@ -1,11 +1,13 @@
 //! Representation of a Proof Step
 use std::slice::Iter;
 
+use crate::prover::{ProofStep, check_and_extend};
+
 use super::worksheet::{Diag, Span, StepIdx};
 use super::ProofWorksheet;
 use lazy_static::lazy_static;
 use memchr::memchr;
-use metamath_knife::formula::{Label, Substitutions};
+use metamath_knife::formula::Label;
 use metamath_knife::Database;
 use metamath_knife::Formula;
 use regex::Regex;
@@ -46,7 +48,7 @@ impl Step {
     pub fn from_str(buf: &str, database: &Database) -> Step {
         lazy_static! {
             static ref PROOF_LINE: Regex = Regex::new(
-                r"(?s)(h?)([0-9a-z]+):((?:\?|[0-9a-z]*)(?:,(?:\?|[0-9a-z]+))*):(\?|[0-9A-Za-z_\-\.]+)[ \t\n]+(.+)",
+                r"(?s)(h?)([0-9a-z]+):((?:\?|[0-9a-z]*)(?:,(?:\?|[0-9a-z]+))*):(\?|[0-9A-Za-z_\-\.]*)[ \t\n]+(.+)",
             ).expect("Malformed Regex");
         }
         let nset = database.name_result();
@@ -211,12 +213,12 @@ impl Step {
             StepType::Qed => {
                 // QED step: validate that it matches the statement
                 self.check_unification(step_idx, worksheet)?;
-                if let Some(sadd) = worksheet.sadd {
+                if let Some(label) = worksheet.label {
                     if self.formula.as_ref()
                         != worksheet
                             .db
                             .stmt_parse_result()
-                            .get_formula(&worksheet.db.statement_by_address(sadd))
+                            .get_formula(&worksheet.db.statement_by_label(label).unwrap())
                     {
                         return Err(Diag::HypothesisDoesNotMatch);
                     }
@@ -254,7 +256,7 @@ impl Step {
                     let hyp_subst = hyp_formula
                         .unify(formula)
                         .ok_or(Diag::UnificationFailedForHyp(hyp_idx))?;
-                    Self::check_and_extend(&mut substitutions, &hyp_subst, hyp_idx)?;
+                    check_and_extend(&mut substitutions, &hyp_subst, hyp_idx)?;
                 }
             } else {
                 return Err(Diag::UnknownStepName(self.hyps[hyp_idx].as_range(0)));
@@ -263,20 +265,7 @@ impl Step {
         Ok(())
     }
 
-    // TODO - move this check that those substitutions are compatible to metamath_knife!!
-    fn check_and_extend(
-        s1: &mut Substitutions,
-        s2: &Substitutions,
-        hyp_idx: usize,
-    ) -> Result<(), Diag> {
-        for (&label, f1) in s1.into_iter() {
-            if let Some(f2) = s2.get(label) {
-                if f1 != f2 {
-                    return Err(Diag::UnificationFailedForHyp(hyp_idx));
-                }
-            }
-        }
-        s1.extend(s2);
-        Ok(())
+    fn as_sorry_proof_step(&self) -> Option<ProofStep> {
+        Some(ProofStep::Sorry { result: self.formula.as_ref()?.clone() })
     }
 }
