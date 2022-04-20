@@ -1,7 +1,7 @@
 //! Representation of a Proof Step
 use std::slice::Iter;
 
-use crate::prover::{check_and_extend, ProofStep};
+use crate::prover::ProofStep;
 
 use super::worksheet::{Diag, Span, StepIdx};
 use super::ProofWorksheet;
@@ -233,35 +233,39 @@ impl Step {
     }
 
     fn check_unification(&self, step_idx: StepIdx, worksheet: &ProofWorksheet) -> Result<(), Diag> {
-        let formula = worksheet.step_stmt_formula(step_idx)?;
+        let db_formula = worksheet.step_stmt_formula(step_idx)?;
         let label_name = worksheet.step_label(step_idx);
         let frame = worksheet.db.scope_result().get(label_name).unwrap();
-        let essentials: Vec<_> = frame.as_ref(&worksheet.db).essentials().collect();
-        if essentials.len() != self.hyps.len() {
+        let essentials = frame.as_ref(&worksheet.db).essentials();
+        let proof_formula = self.formula.as_ref().ok_or(Diag::NoFormula)?;
+        let mut formulas = vec![(proof_formula, db_formula)];
+        let mut db_hyp_count = 0;
+        for (hyp_idx, (_, db_formula)) in essentials.enumerate() {
+            db_hyp_count += 1;
+            if hyp_idx < self.hyps.len() {
+                let step_name = worksheet.hyp_name(step_idx, hyp_idx);
+                if let Some(&hyp_step_idx) = worksheet.steps_by_name.get(step_name) {
+                    if let Some(hyp_formula) = worksheet.step_formula(hyp_step_idx) {
+                        formulas.push((hyp_formula, db_formula));
+                    }
+                } else {
+                    return Err(Diag::UnknownStepName(self.hyps[hyp_idx].as_range(0)));
+                }
+            }
+        }
+        if db_hyp_count != self.hyps.len() {
             return Err(Diag::WrongHypCount {
-                expected: essentials.len(),
+                expected: db_hyp_count,
                 actual: self.hyps.len(),
             });
         }
-        let mut substitutions = self
-            .formula
-            .as_ref()
-            .ok_or(Diag::NoFormula)?
-            .unify(formula)
-            .ok_or(Diag::UnificationFailed)?;
-        for (hyp_idx, (_, formula)) in essentials.into_iter().enumerate() {
-            let step_name = worksheet.hyp_name(step_idx, hyp_idx);
-            if let Some(&hyp_step_idx) = worksheet.steps_by_name.get(step_name) {
-                if let Some(hyp_formula) = worksheet.step_formula(hyp_step_idx) {
-                    let hyp_subst = hyp_formula
-                        .unify(formula)
-                        .ok_or(Diag::UnificationFailedForHyp(hyp_idx))?;
-                    check_and_extend(&mut substitutions, &hyp_subst, hyp_idx)?;
-                }
+        Formula::unify_n(formulas.into_boxed_slice()).map_err(|hyp_idx| {
+            if hyp_idx == 0 {
+                Diag::UnificationFailed
             } else {
-                return Err(Diag::UnknownStepName(self.hyps[hyp_idx].as_range(0)));
+                Diag::UnificationFailedForHyp(hyp_idx - 1)
             }
-        }
+        })?;
         Ok(())
     }
 

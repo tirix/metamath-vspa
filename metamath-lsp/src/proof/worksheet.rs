@@ -578,6 +578,7 @@ impl ProofWorksheet {
         step_info.step.formula()
     }
 
+    /// The statement formula in the database for the given step.
     pub(crate) fn step_stmt_formula(&self, step_idx: StepIdx) -> Result<&Formula, Diag> {
         let unknown_theorem =
             || Diag::UnknownTheoremLabel(self.steps[step_idx].step.name_span().into());
