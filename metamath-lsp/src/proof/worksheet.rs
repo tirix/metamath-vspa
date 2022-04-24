@@ -184,6 +184,13 @@ impl StepInfo {
     pub fn get_label(&self, db: &Database) -> Option<Label> {
         Some(db.name_result().lookup_label(self.label().as_bytes())?.atom)
     }
+
+    #[inline]
+    #[must_use]
+    /// The name of this step
+    pub fn name(&self) -> &str {
+        self.step.name_span().as_ref(&self.source)
+    }
 }
 
 /// If there is any space character at the beginning of a line,
@@ -638,7 +645,11 @@ impl ProofWorksheet {
             .formula()
             .ok_or_else(|| ServerError::from("Could not parse goal formula"))?
             .clone();
-        let mut known_steps = vec![];
+        let mut context = Context::new(
+            self.db.clone(),
+            loc_after,
+            goal,
+        );
         for (step_idx, step_info) in self
             .steps
             .iter()
@@ -646,21 +657,16 @@ impl ProofWorksheet {
             .filter(|(_, s)| s.line_idx < goal_step.line_idx)
         {
             if let Some(result) = step_info.step.formula() {
-                known_steps.push((step_idx, ProofStep::sorry(result.clone())));
+                context.add_known_step(Some(step_idx), ProofStep::sorry(result.clone()));
             }
         }
-        Ok(Context::new(
-            self.db.clone(),
-            loc_after,
-            goal,
-            known_steps,
-            self.steps.len(),
-        ))
+        Ok(context)
     }
 
     pub(crate) fn append_proof_text(
         &self,
         proof_step: &ProofStep,
+        use_name: &str,
         next_name: &mut usize,
         buffer: &mut String,
     ) {
@@ -673,12 +679,13 @@ impl ProofWorksheet {
             } => {
                 let mut hyp_names = vec![];
                 for step in apply_on.iter() {
-                    hyp_names.push(next_name.to_string());
-                    self.append_proof_text(step, next_name, buffer);
+                    let step_name = next_name.to_string();
+                    self.append_proof_text(step, &step_name, next_name, buffer);
+                    hyp_names.push(step_name);
                 }
                 buffer.push_str(&format!(
                     "{}:{}:{} {}\n",
-                    next_name,
+                    use_name,
                     hyp_names.join(","),
                     as_str(self.db.name_result().atom_name(*apply)),
                     result.as_ref(&self.db)
@@ -687,23 +694,23 @@ impl ProofWorksheet {
             ProofStep::Hyp { label, result } => {
                 buffer.push_str(&format!(
                     "h{}::{} {}\n",
-                    next_name,
+                    use_name,
                     as_str(self.db.name_result().atom_name(*label)),
                     result.as_ref(&self.db)
                 ));
             }
             ProofStep::Sorry { result } => {
-                buffer.push_str(&format!("{}:: {}\n", next_name, result.as_ref(&self.db)));
+                buffer.push_str(&format!("{}:: {}\n", use_name, result.as_ref(&self.db)));
             }
         }
         *next_name += 10;
     }
 
-    pub(crate) fn proof_text(&self, proof_step: &ProofStep) -> String {
+    pub(crate) fn proof_text(&self, proof_step: &ProofStep, step_name: &str) -> String {
         // Find the next available name
         let mut next_name = self.last_name.unwrap_or(0) + 10;
         let mut buffer = String::new();
-        self.append_proof_text(proof_step, &mut next_name, &mut buffer);
+        self.append_proof_text(proof_step, step_name, &mut next_name, &mut buffer);
         buffer
     }
 }

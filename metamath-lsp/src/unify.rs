@@ -31,6 +31,6 @@ pub(crate) fn unify(
         // If the step theorem label is unknown, use the `assumption` tactics
         Assumption.elaborate(&mut context)
     };
-    let new_text = worksheet.proof_text(&proof_step?);
+    let new_text = worksheet.proof_text(&proof_step?, step_info.name());
     Ok(TextEdit::new(Range::new(start_pos, end_pos), new_text))
 }

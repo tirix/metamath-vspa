@@ -8,8 +8,6 @@ pub mod tactics;
 
 use std::fmt::Display;
 
-use metamath_knife::formula::Substitutions;
-
 pub use self::context::Context;
 pub use self::proof_step::ProofStep;
 
@@ -43,21 +41,4 @@ impl Display for TacticsError {
 pub trait Tactics {
     fn get_name(&self) -> String;
     fn elaborate(&self, context: &mut Context) -> TacticsResult;
-}
-
-// TODO - move this to metamath_knife!!
-pub fn check_and_extend(
-    s1: &mut Substitutions,
-    s2: &Substitutions,
-    hyp_idx: usize,
-) -> Result<(), TacticsError> {
-    for (&label, f1) in s1.into_iter() {
-        if let Some(f2) = s2.get(label) {
-            if f1 != f2 {
-                return Err(TacticsError::UnificationFailedForHyp(hyp_idx));
-            }
-        }
-    }
-    s1.extend(s2);
-    Ok(())
 }

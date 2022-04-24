@@ -259,7 +259,7 @@ impl Step {
                 actual: self.hyps.len(),
             });
         }
-        Formula::unify_n(formulas.into_boxed_slice()).map_err(|hyp_idx| {
+        Formula::unify_n(&formulas.into_boxed_slice()).map_err(|hyp_idx| {
             if hyp_idx == 0 {
                 Diag::UnificationFailed
             } else {

@@ -1,3 +1,4 @@
+
 use metamath_knife::Label;
 
 use crate::prover::{Context, ProofStep, Tactics, TacticsError, TacticsResult};
@@ -21,16 +22,14 @@ impl Tactics for Apply {
         let (formula, essentials) = context
             .get_theorem_formulas(self.0)
             .ok_or_else(|| TacticsError::from("Unknown theorem"))?;
-        let substitutions = context
+        let mut substitutions = context
             .goal()
             .unify(&formula)
             .ok_or_else(|| TacticsError::from("Unification failed"))?;
         let mut hyp_steps = vec![];
         for (_, ess_fmla) in essentials.into_iter() {
-            //let ess_sref = context.db.statement_by_label(label).ok_or(TacticsError::from("Unknown essential"))?;
-            //let ess_fmla = context.db.stmt_parse_result().get_formula(&ess_sref).ok_or(TacticsError::from("Essential formula not found"))?;
-            //let ess_subst = ess_fmla.unify(&formula).ok_or(TacticsError::from("Unification failed"))?;
-            //check_and_extend(&mut substitutions, &ess_subst, hyp_idx)?;
+            // Complete the substitutions with new work variables if needed
+            ess_fmla.as_ref(&context.db.clone()).complete_substitutions(&mut substitutions, context)?;
             let formula = ess_fmla.substitute(&substitutions);
             hyp_steps.push(ProofStep::sorry(formula)); // TODO, recursively try to match with existing steps rather than "sorry"
         }
