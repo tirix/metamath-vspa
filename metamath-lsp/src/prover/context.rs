@@ -139,9 +139,8 @@ impl<'a> Context {
     /// It might however already be in use in the rest of the proof.
     /// Therefore, a new variable with the same typecode is chosen for substitution (MMJ2 would have used `&W1`)
     fn build_used_variables_list(&mut self, formula: &Formula) {
-        for (label, is_variable) in formula {
+        for (label, is_variable) in formula.labels_iter() {
             if is_variable {
-                crate::server::SERVER.log_message(format!("Adding used variable {}!", as_str(self.db.name_result().atom_name(label)))).ok();
                 let typecode = self.db.label_typecode(label);
                 self.used_variables.entry(typecode).or_insert_with(|| BTreeSet::new()).insert(label);
             }

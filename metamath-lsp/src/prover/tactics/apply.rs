@@ -1,5 +1,5 @@
 
-use metamath_knife::Label;
+use metamath_knife::{Label, formula::Substitutions};
 
 use crate::prover::{Context, ProofStep, Tactics, TacticsError, TacticsResult};
 
@@ -22,10 +22,10 @@ impl Tactics for Apply {
         let (formula, essentials) = context
             .get_theorem_formulas(self.0)
             .ok_or_else(|| TacticsError::from("Unknown theorem"))?;
-        let mut substitutions = context
+        let mut substitutions = Substitutions::new();
+        context
             .goal()
-            .unify(&formula)
-            .ok_or_else(|| TacticsError::from("Unification failed"))?;
+            .unify(&formula, &mut substitutions)?;
         let mut hyp_steps = vec![];
         for (_, ess_fmla) in essentials.into_iter() {
             // Complete the substitutions with new work variables if needed
@@ -37,7 +37,7 @@ impl Tactics for Apply {
             self.0,
             hyp_steps.into_boxed_slice(),
             context.goal().clone(),
-            substitutions,
+            Box::new(substitutions),
         ))
     }
 }

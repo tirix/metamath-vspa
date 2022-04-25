@@ -7,6 +7,7 @@ use lsp_types::{
     TextDocumentContentChangeEvent,
 };
 use metamath_knife::diag::StmtParseError;
+use metamath_knife::formula::UnificationError;
 use metamath_knife::statement::TokenPtr;
 use metamath_knife::{as_str, Database, Formula, Label};
 use regex::{Match, Regex};
@@ -29,8 +30,8 @@ pub enum Diag {
     ProofDoesNotMatch,
     WrongHypCount { expected: usize, actual: usize },
     TactisError(TacticsError),
-    UnificationFailed,
-    UnificationFailedForHyp(usize),
+    UnificationFailed(UnificationError),
+    UnificationFailedForHyp(usize, UnificationError),
 }
 
 impl From<StmtParseError> for Diag {
@@ -42,6 +43,18 @@ impl From<StmtParseError> for Diag {
 impl From<TacticsError> for Diag {
     fn from(e: TacticsError) -> Self {
         Diag::TactisError(e)
+    }
+}
+
+impl From<UnificationError> for Diag {
+    fn from(e: UnificationError) -> Self {
+        Diag::UnificationFailed(e)
+    }
+}
+
+impl From<(usize, UnificationError)> for Diag {
+    fn from(e: (usize, UnificationError)) -> Self {
+        Diag::UnificationFailedForHyp(e.0, e.1)
     }
 }
 
@@ -112,8 +125,8 @@ impl Diag {
                 expected = expected,
                 actual = actual
             ),
-            Diag::UnificationFailed => "Unification failed".to_string(),
-            Diag::UnificationFailedForHyp(_) => "Unification failed for hypothesis".to_string(),
+            Diag::UnificationFailed(_) => "Unification failed".to_string(),
+            Diag::UnificationFailedForHyp(_, _) => "Unification failed for hypothesis".to_string(),
         }
     }
 
@@ -143,10 +156,10 @@ impl Diag {
             | Diag::DatabaseDiagnostic(StmtParseError::ParsedStatementWrongTypeCode(_))
             | Diag::ProofDoesNotMatch
             | Diag::HypothesisDoesNotMatch
-            | Diag::UnificationFailed => step_info.step.formula_range(step_info.byte_idx),
+            | Diag::UnificationFailed(_) => step_info.step.formula_range(step_info.byte_idx),
             Diag::WrongHypCount { .. } => step_info.step.hyps_span().as_range(step_info.byte_idx),
-            Diag::TactisError(TacticsError::UnificationFailedForHyp(hyp_idx))
-            | Diag::UnificationFailedForHyp(hyp_idx) => step_info
+            Diag::TactisError(TacticsError::UnificationFailedForHyp(hyp_idx, _))
+            | Diag::UnificationFailedForHyp(hyp_idx, _) => step_info
                 .step
                 .hyp_ref_span(*hyp_idx)
                 .as_range(step_info.byte_idx),

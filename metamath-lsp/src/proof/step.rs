@@ -7,7 +7,7 @@ use super::worksheet::{Diag, Span, StepIdx};
 use super::ProofWorksheet;
 use lazy_static::lazy_static;
 use memchr::memchr;
-use metamath_knife::formula::Label;
+use metamath_knife::formula::{Label, Substitutions};
 use metamath_knife::Database;
 use metamath_knife::Formula;
 use regex::Regex;
@@ -238,7 +238,8 @@ impl Step {
         let frame = worksheet.db.scope_result().get(label_name).unwrap();
         let essentials = frame.as_ref(&worksheet.db).essentials();
         let proof_formula = self.formula.as_ref().ok_or(Diag::NoFormula)?;
-        let mut formulas = vec![(proof_formula, db_formula)];
+        let mut substitutions = Substitutions::new();
+        proof_formula.unify(db_formula, &mut substitutions)?;
         let mut db_hyp_count = 0;
         for (hyp_idx, (_, db_formula)) in essentials.enumerate() {
             db_hyp_count += 1;
@@ -246,7 +247,7 @@ impl Step {
                 let step_name = worksheet.hyp_name(step_idx, hyp_idx);
                 if let Some(&hyp_step_idx) = worksheet.steps_by_name.get(step_name) {
                     if let Some(hyp_formula) = worksheet.step_formula(hyp_step_idx) {
-                        formulas.push((hyp_formula, db_formula));
+                        hyp_formula.unify(db_formula, &mut substitutions).map_err(|e| Diag::from((hyp_idx, e)))?;
                     }
                 } else {
                     return Err(Diag::UnknownStepName(self.hyps[hyp_idx].as_range(0)));
@@ -259,13 +260,6 @@ impl Step {
                 actual: self.hyps.len(),
             });
         }
-        Formula::unify_n(&formulas.into_boxed_slice()).map_err(|hyp_idx| {
-            if hyp_idx == 0 {
-                Diag::UnificationFailed
-            } else {
-                Diag::UnificationFailedForHyp(hyp_idx - 1)
-            }
-        })?;
         Ok(())
     }
 
