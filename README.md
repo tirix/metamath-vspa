@@ -52,6 +52,11 @@ Preview:
 
 ![mm-vscode-2](https://user-images.githubusercontent.com/5831830/160329806-9754a8e1-2876-48db-8a0e-632f26be0fdb.gif)
 
+* Unification, first version:
+
+![mm-vscode-4](https://user-images.githubusercontent.com/5831830/165107686-6cfe3447-191c-4af1-809b-bcabb0f0c148.gif)
+
+
 ## Acknowledgements
 
 - This server is based on Mario Carneiro's LSP server for MM0.
