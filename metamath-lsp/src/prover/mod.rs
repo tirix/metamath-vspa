@@ -7,6 +7,7 @@ mod proof_step;
 pub mod tactics;
 
 use std::fmt::Display;
+use std::ops::Index;
 
 use metamath_knife::formula::UnificationError;
 
@@ -59,4 +60,25 @@ impl Display for TacticsError {
 pub trait Tactics {
     fn get_name(&self) -> String;
     fn elaborate(&self, context: &mut Context) -> TacticsResult;
+}
+
+/// A list of tactics, like
+pub enum TacticsList {
+    Literal(Vec<Box<dyn Tactics>>),
+    Repeat(Box<dyn Tactics>),
+}
+
+impl Index<usize> for TacticsList {
+    type Output = Box<dyn Tactics>;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match self {
+            TacticsList::Literal(vec) => {
+                &vec[index]
+            },
+            TacticsList::Repeat(tactics) => {
+                tactics
+            },
+        }
+    }
 }

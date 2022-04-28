@@ -8,7 +8,15 @@ impl Tactics for Assumption {
         "assumption".to_string()
     }
 
-    fn elaborate(&self, _context: &mut Context) -> TacticsResult {
-        Err(TacticsError::from("Not implemented!"))
+    fn elaborate(&self, context: &mut Context) -> TacticsResult {
+        for (_, step) in context.known_steps() {
+            // TODO: Here, we need to unify and resolve work variables if any!
+            //let mut substitutions = Substitutions::new();
+            //if step.result().unify(context.goal(), &mut substitutions).is_err() { continue; }
+            if step.result().eq(context.goal()) {
+                return Ok(step.clone());
+            }
+        }
+        Err(TacticsError::from("No assumption matches the goal!"))
     }
 }
