@@ -247,7 +247,9 @@ impl Step {
                 let step_name = worksheet.hyp_name(step_idx, hyp_idx);
                 if let Some(&hyp_step_idx) = worksheet.steps_by_name.get(step_name) {
                     if let Some(hyp_formula) = worksheet.step_formula(hyp_step_idx) {
-                        hyp_formula.unify(db_formula, &mut substitutions).map_err(|e| Diag::from((hyp_idx, e)))?;
+                        hyp_formula
+                            .unify(db_formula, &mut substitutions)
+                            .map_err(|e| Diag::from((hyp_idx, e)))?;
                     }
                 } else {
                     return Err(Diag::UnknownStepName(self.hyps[hyp_idx].as_range(0)));

@@ -1,5 +1,4 @@
-use crate::prover::{Tactics, Context, TacticsResult, TacticsError};
-
+use crate::prover::{Context, Tactics, TacticsError, TacticsResult};
 
 /// A tactics which tries a list of tactics until one of them produces a proof.
 pub struct Try {
@@ -24,6 +23,8 @@ impl Tactics for Try {
                 return Ok(step);
             }
         }
-        Err(TacticsError::from("None of the tactics tried produced a proof"))
+        Err(TacticsError::from(
+            "None of the tactics tried produced a proof",
+        ))
     }
 }

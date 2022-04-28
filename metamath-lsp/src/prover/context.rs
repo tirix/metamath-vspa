@@ -14,8 +14,8 @@ use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::TacticsError;
 use super::proof_step::ProofStep;
+use super::TacticsError;
 
 /// A type for representing theorem essential hypotheses: a label and the corresponding formula.
 pub struct Hypotheses(Box<[(Label, Formula)]>);
@@ -68,11 +68,7 @@ pub struct Context {
 }
 
 impl<'a> Context {
-    pub fn new(
-        db: Database,
-        loc_after: Label,
-        goal: Formula
-    ) -> Self {
+    pub fn new(db: Database, loc_after: Label, goal: Formula) -> Self {
         let mut context = Context {
             db,
             loc_after,
@@ -132,7 +128,7 @@ impl<'a> Context {
         }
     }
 
-    /// Builds the list of available variables, 
+    /// Builds the list of available variables,
     /// removing variables occurring in the given formula from the list of available variables from which new variables can be taken.
     /// Think for example `syl: ( ph -> ps ) , ( ps -> ch ) |- ( ph -> ch )`
     /// When only unifying with the final statement, there is no substitution for the variable ` ps `.
@@ -142,7 +138,10 @@ impl<'a> Context {
         for (label, is_variable) in formula.labels_iter() {
             if is_variable {
                 let typecode = self.db.label_typecode(label);
-                self.used_variables.entry(typecode).or_insert_with(|| BTreeSet::new()).insert(label);
+                self.used_variables
+                    .entry(typecode)
+                    .or_insert_with(BTreeSet::new)
+                    .insert(label);
             }
         }
     }
@@ -280,14 +279,23 @@ impl WorkVariableProvider<TacticsError> for Context {
     /// Finds the next available variable with the given typecode
     fn new_work_variable(&mut self, typecode: TypeCode) -> Result<Label, TacticsError> {
         // This is a naive implementation which goes through all the statements, and finds the first float not yet used.
-        // TODO Cache! 
+        // TODO Cache!
         let tc_token = self.db.name_result().atom_name(typecode);
-        let used_variables = self.used_variables.entry(typecode).or_insert_with(|| BTreeSet::new());
+        let used_variables = self
+            .used_variables
+            .entry(typecode)
+            .or_insert_with(BTreeSet::new);
         for sref in self.db.statements_range(..) {
-            if sref.statement_type() != StatementType::Floating { continue; }
-            if sref.math_at(0).slice != tc_token { continue; }
+            if sref.statement_type() != StatementType::Floating {
+                continue;
+            }
+            if sref.math_at(0).slice != tc_token {
+                continue;
+            }
             let label = self.db.name_result().get_atom(sref.label());
-            if used_variables.contains(&label) { continue; }
+            if used_variables.contains(&label) {
+                continue;
+            }
             used_variables.insert(label);
             return Ok(label);
         }

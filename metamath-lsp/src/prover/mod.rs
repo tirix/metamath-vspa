@@ -46,9 +46,7 @@ impl Display for TacticsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TacticsError::Error(string) => f.write_str(string),
-            TacticsError::UnificationFailed(_) => {
-                f.write_str("Unification failed")
-            }
+            TacticsError::UnificationFailed(_) => f.write_str("Unification failed"),
             TacticsError::UnificationFailedForHyp(_, _) => {
                 f.write_str("Unification failed for hypothesis")
             }
@@ -73,12 +71,8 @@ impl Index<usize> for TacticsList {
 
     fn index(&self, index: usize) -> &Self::Output {
         match self {
-            TacticsList::Literal(vec) => {
-                &vec[index]
-            },
-            TacticsList::Repeat(tactics) => {
-                tactics
-            },
+            TacticsList::Literal(vec) => &vec[index],
+            TacticsList::Repeat(tactics) => tactics,
         }
     }
 }

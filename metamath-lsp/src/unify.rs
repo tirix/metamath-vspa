@@ -1,11 +1,11 @@
 //! This is handler for the "Unify" command
 //! It tries to apply the best fitting tactics, based on the context.
-use crate::prover::TacticsList;
 use crate::prover::tactics::Apply;
 use crate::prover::tactics::Assumption;
-use crate::prover::Tactics;
 use crate::prover::tactics::Sorry;
 use crate::prover::tactics::Try;
+use crate::prover::Tactics;
+use crate::prover::TacticsList;
 use crate::util::FileRef;
 use crate::vfs::Vfs;
 use crate::ServerError;

@@ -658,11 +658,7 @@ impl ProofWorksheet {
             .formula()
             .ok_or_else(|| ServerError::from("Could not parse goal formula"))?
             .clone();
-        let mut context = Context::new(
-            self.db.clone(),
-            loc_after,
-            goal,
-        );
+        let mut context = Context::new(self.db.clone(), loc_after, goal);
         for (step_idx, step_info) in self
             .steps
             .iter()
