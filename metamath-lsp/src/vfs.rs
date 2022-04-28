@@ -6,6 +6,7 @@ use crate::rope_ext::read_to_rope;
 use crate::rope_ext::RopeExt;
 use crate::util::FileRef;
 use crate::MutexExt;
+use crate::ServerError;
 use log::*;
 use lsp_types::Diagnostic;
 use lsp_types::Position;
@@ -38,6 +39,13 @@ impl FileContents {
         match self {
             FileContents::MMFile(text) => text.line(line_idx),
             FileContents::MMPFile(text) => text.line(line_idx),
+        }
+    }
+
+    pub(crate) fn as_proof(&self) -> Result<&Arc<ProofWorksheet>, ServerError> {
+        match self {
+            FileContents::MMFile(_) => Err("Wrong file type".into()),
+            FileContents::MMPFile(text) => Ok(text),
         }
     }
 }

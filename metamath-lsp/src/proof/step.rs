@@ -1,6 +1,8 @@
 //! Representation of a Proof Step
 use std::slice::Iter;
 
+use crate::prover::ProofStep;
+
 use super::worksheet::{Diag, Span, StepIdx};
 use super::ProofWorksheet;
 use lazy_static::lazy_static;
@@ -46,7 +48,7 @@ impl Step {
     pub fn from_str(buf: &str, database: &Database) -> Step {
         lazy_static! {
             static ref PROOF_LINE: Regex = Regex::new(
-                r"(?s)(h?)([0-9a-z]+):((?:\?|[0-9a-z]*)(?:,(?:\?|[0-9a-z]+))*):(\?|[0-9A-Za-z_\-\.]+)[ \t\n]+(.+)",
+                r"(?s)(h?)([0-9a-z]+):((?:\?|[0-9a-z]*)(?:,(?:\?|[0-9a-z]+))*):(\?|[0-9A-Za-z_\-\.]*)[ \t\n]+(.+)",
             ).expect("Malformed Regex");
         }
         let nset = database.name_result();
@@ -211,12 +213,12 @@ impl Step {
             StepType::Qed => {
                 // QED step: validate that it matches the statement
                 self.check_unification(step_idx, worksheet)?;
-                if let Some(sadd) = worksheet.sadd {
+                if let Some(label) = worksheet.label {
                     if self.formula.as_ref()
                         != worksheet
                             .db
                             .stmt_parse_result()
-                            .get_formula(&worksheet.db.statement_by_address(sadd))
+                            .get_formula(&worksheet.db.statement_by_label(label).unwrap())
                     {
                         return Err(Diag::HypothesisDoesNotMatch);
                     }
@@ -231,52 +233,41 @@ impl Step {
     }
 
     fn check_unification(&self, step_idx: StepIdx, worksheet: &ProofWorksheet) -> Result<(), Diag> {
-        let formula = worksheet.step_stmt_formula(step_idx)?;
+        let db_formula = worksheet.step_stmt_formula(step_idx)?;
         let label_name = worksheet.step_label(step_idx);
         let frame = worksheet.db.scope_result().get(label_name).unwrap();
-        let essentials: Vec<_> = frame.as_ref(&worksheet.db).essentials().collect();
-        if essentials.len() != self.hyps.len() {
+        let essentials = frame.as_ref(&worksheet.db).essentials();
+        let proof_formula = self.formula.as_ref().ok_or(Diag::NoFormula)?;
+        let mut substitutions = Substitutions::new();
+        proof_formula.unify(db_formula, &mut substitutions)?;
+        let mut db_hyp_count = 0;
+        for (hyp_idx, (_, db_formula)) in essentials.enumerate() {
+            db_hyp_count += 1;
+            if hyp_idx < self.hyps.len() {
+                let step_name = worksheet.hyp_name(step_idx, hyp_idx);
+                if let Some(&hyp_step_idx) = worksheet.steps_by_name.get(step_name) {
+                    if let Some(hyp_formula) = worksheet.step_formula(hyp_step_idx) {
+                        hyp_formula
+                            .unify(db_formula, &mut substitutions)
+                            .map_err(|e| Diag::from((hyp_idx, e)))?;
+                    }
+                } else {
+                    return Err(Diag::UnknownStepName(self.hyps[hyp_idx].as_range(0)));
+                }
+            }
+        }
+        if db_hyp_count != self.hyps.len() {
             return Err(Diag::WrongHypCount {
-                expected: essentials.len(),
+                expected: db_hyp_count,
                 actual: self.hyps.len(),
             });
-        }
-        let mut substitutions = self
-            .formula
-            .as_ref()
-            .ok_or(Diag::NoFormula)?
-            .unify(formula)
-            .ok_or(Diag::UnificationFailed)?;
-        for (hyp_idx, (_, formula)) in essentials.into_iter().enumerate() {
-            let step_name = worksheet.hyp_name(step_idx, hyp_idx);
-            if let Some(&hyp_step_idx) = worksheet.steps_by_name.get(step_name) {
-                if let Some(hyp_formula) = worksheet.step_formula(hyp_step_idx) {
-                    let hyp_subst = hyp_formula
-                        .unify(formula)
-                        .ok_or(Diag::UnificationFailedForHyp(hyp_idx))?;
-                    Self::check_and_extend(&mut substitutions, &hyp_subst, hyp_idx)?;
-                }
-            } else {
-                return Err(Diag::UnknownStepName(self.hyps[hyp_idx].as_range(0)));
-            }
         }
         Ok(())
     }
 
-    // TODO - move this check that those substitutions are compatible to metamath_knife!!
-    fn check_and_extend(
-        s1: &mut Substitutions,
-        s2: &Substitutions,
-        hyp_idx: usize,
-    ) -> Result<(), Diag> {
-        for (&label, f1) in s1.into_iter() {
-            if let Some(f2) = s2.get(label) {
-                if f1 != f2 {
-                    return Err(Diag::UnificationFailedForHyp(hyp_idx));
-                }
-            }
-        }
-        s1.extend(s2);
-        Ok(())
+    fn as_sorry_proof_step(&self) -> Option<ProofStep> {
+        Some(ProofStep::Sorry {
+            result: self.formula.as_ref()?.clone(),
+        })
     }
 }

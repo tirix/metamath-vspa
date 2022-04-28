@@ -10,6 +10,7 @@ use crate::outline::outline;
 use crate::references::references;
 use crate::show_proof::show_proof;
 use crate::types::ShowProofParams;
+use crate::unify::unify;
 use crate::vfs::FileContents;
 use crate::vfs::Vfs;
 use crate::Result;
@@ -39,6 +40,7 @@ enum RequestType {
     DocumentHighlight(DocumentHighlightParams),
     InlayHint(InlayHintParams),
     ShowProof(ShowProofParams),
+    Unify(TextDocumentPositionParams),
     ToggleDv,
 }
 
@@ -60,6 +62,7 @@ fn parse_request(
         "textDocument/inlayHint" => Some((id, RequestType::InlayHint(from_value(params)?))),
         "metamath/toggleDv" => Some((id, RequestType::ToggleDv)),
         "metamath/showProof" => Some((id, RequestType::ShowProof(from_value(params)?))),
+        "metamath/unify" => Some((id, RequestType::Unify(from_value(params)?))),
         _ => None,
     })
 }
@@ -183,6 +186,10 @@ impl RequestHandler {
             RequestType::DocumentSymbol(DocumentSymbolParams { .. }) => {
                 self.response(outline(vfs, &db))
             }
+            RequestType::Unify(TextDocumentPositionParams {
+                text_document: doc,
+                position,
+            }) => self.response(unify(doc.uri.into(), position, vfs, db)),
             RequestType::InlayHint(InlayHintParams {
                 text_document: doc,
                 range,

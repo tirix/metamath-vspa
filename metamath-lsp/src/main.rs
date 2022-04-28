@@ -6,11 +6,13 @@ mod hover;
 mod inlay_hints;
 mod outline;
 mod proof;
+mod prover;
 mod references;
 mod rope_ext;
 mod server;
 mod show_proof;
 mod types;
+mod unify;
 mod util;
 mod vfs;
 
@@ -18,6 +20,7 @@ use crate::server::SERVER;
 use clap::{App, Arg};
 use crossbeam::channel::SendError;
 use log::*;
+use prover::TacticsError;
 use std::error::Error;
 use std::str::FromStr;
 //use crate::util::{ArcList, ArcString, BoxError, FileRef, FileSpan, Span, MutexExt, CondvarExt};
@@ -90,6 +93,12 @@ impl From<String> for ServerError {
 impl From<()> for ServerError {
     fn from(_: ()) -> Self {
         "Internal Error".into()
+    }
+}
+
+impl From<TacticsError> for ServerError {
+    fn from(e: TacticsError) -> Self {
+        ServerError(format!("{}", e).into())
     }
 }
 

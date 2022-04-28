@@ -1,4 +1,4 @@
-import { commands, window, workspace, ExtensionContext, Range, Position, Selection, EndOfLine, CodeActionKind, Uri } from 'vscode';
+import { commands, window, workspace, ExtensionContext, Range, Position, Selection, EndOfLine, CodeActionKind, Uri, TextEditor, TextEditorEdit } from 'vscode';
 import * as fs from 'fs'; 
 import {
 	LanguageClient,
@@ -10,7 +10,7 @@ import {
 	CloseAction
 } from 'vscode-languageclient';
 import {
-	TextDocumentIdentifier,
+	TextDocumentIdentifier, TextEdit,
 } from 'vscode-languageserver-types';
 import {
 	TextDocumentPositionParams
@@ -31,6 +31,10 @@ interface ShowProofParams {
 
 namespace ShowProofRequest {
 	export const type = new RequestType<ShowProofParams, string, void>('metamath/showProof');
+}
+
+namespace UnifyRequest {
+	export const type = new RequestType<TextDocumentPositionParams, TextEdit, void>('metamath/unify');
 }
 
 namespace ToggleDvRequest {
@@ -82,7 +86,7 @@ export function activate(context: ExtensionContext) {
 		// For Text search, see https://github.com/microsoft/vscode/issues/59921
 		commands.registerCommand('metamath.showProof', showProof),
 		commands.registerCommand('metamath.toggleDv', toggleDv),
-		commands.registerCommand('metamath.unify', unify),
+		commands.registerTextEditorCommand('metamath.unify', unify),
 		commands.registerCommand('metamath.shutdownServer',
 			() => client.stop().then(() => {}, () => {})),
 		commands.registerCommand('metamath.restartServer',
@@ -137,10 +141,18 @@ function showProof() {
 	});
 }
 
-function unify() {
-	// Display a message box to the user
-	window.showInformationMessage('Hello World from Metamath!');
-	//			editor.edit((editBuilder) => {
-	//				editBuilder.replace(range, result);
-	//			});
+function unify(editor: TextEditor, editBuilder: TextEditorEdit, ...args: any[]) {
+	let params: TextDocumentPositionParams = {
+		textDocument: TextDocumentIdentifier.create(editor.document.uri.toString()),
+		position: editor.selection.start
+	};
+	client.sendRequest(UnifyRequest.type, params).then(async(response: TextEdit) => {
+		const edit = client.protocol2CodeConverter.asTextEdit(response);
+		//editBuilder.replace(edit.range, edit.newText);
+		editor.edit((editBuilder) => {
+			editBuilder.replace(edit.range, edit.newText);
+		});
+	}, async (error: any) => {
+		console.log("Unification error:" + error);
+	});
 }
