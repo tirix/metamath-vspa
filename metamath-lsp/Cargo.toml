@@ -13,7 +13,7 @@ categories = ["command-line-utilities", "development-tools", "mathematics"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-metamath-knife = { git = "https://github.com/david-a-wheeler/metamath-knife", tag = "v0.3.5" }
+metamath-knife = { git = "https://github.com/david-a-wheeler/metamath-knife", tag = "v0.3.6" }
 lsp-server = "0.5"
 lsp-types = { version = "0.92.1", features = ["proposed"] }
 lsp-text = "0.3"

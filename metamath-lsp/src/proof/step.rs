@@ -148,7 +148,6 @@ impl Step {
     }
 
     #[inline]
-    #[must_use]
     /// An iterator through the hypotheses of this step
     pub(crate) fn hyps(&self) -> Iter<Span> {
         self.hyps.iter()
@@ -178,7 +177,6 @@ impl Step {
     }
 
     #[inline]
-    #[must_use]
     /// An iterator through the diagnostics for this step
     pub fn diags(&self) -> Iter<Diag> {
         self.diags.iter()
@@ -241,19 +239,19 @@ impl Step {
                 actual: self.hyps.len(),
             });
         }
-        let mut substitutions = self
-            .formula
+        let mut substitutions = Substitutions::new();
+        self.formula
             .as_ref()
             .ok_or(Diag::NoFormula)?
-            .unify(formula)
-            .ok_or(Diag::UnificationFailed)?;
+            .unify(formula, &mut substitutions)?;
         for (hyp_idx, (_, formula)) in essentials.into_iter().enumerate() {
             let step_name = worksheet.hyp_name(step_idx, hyp_idx);
             if let Some(&hyp_step_idx) = worksheet.steps_by_name.get(step_name) {
                 if let Some(hyp_formula) = worksheet.step_formula(hyp_step_idx) {
-                    let hyp_subst = hyp_formula
-                        .unify(formula)
-                        .ok_or(Diag::UnificationFailedForHyp(hyp_idx))?;
+                    let mut hyp_subst = Substitutions::new();
+                    hyp_formula
+                        .unify(formula, &mut hyp_subst)
+                        .map_err(|_| Diag::UnificationFailedForHyp(hyp_idx))?;
                     Self::check_and_extend(&mut substitutions, &hyp_subst, hyp_idx)?;
                 }
             } else {

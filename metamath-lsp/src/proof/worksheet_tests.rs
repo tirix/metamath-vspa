@@ -194,7 +194,7 @@ $)
     )
     .unwrap();
     let diags = worksheet.diagnostics();
-    println!("{:#?}", diags);
+    println!("{diags:#?}");
     assert_eq!(diags[0], mkdiag(4, 4, 4, 9, "Unknown theorem"));
     assert_eq!(diags[1], mkdiag(5, 4, 5, 9, "Unknown theorem"));
     assert_eq!(diags[2], mkdiag(6, 4, 6, 9, "Unknown theorem"));
@@ -267,7 +267,7 @@ fn worksheet_insert_middle() {
         "2::ax-1        |- ( ( ps -> ch )\n    -> ( ps -> ph ) )\n"
     );
     let diags = worksheet.diagnostics();
-    println!("{:#?}", diags);
+    println!("{diags:#?}");
     assert_eq!(diags.len(), 2);
     assert_eq!(diags[0], mkdiag(5, 15, 7, 0, "Unification failed"));
     assert_eq!(
@@ -344,7 +344,7 @@ fn worksheet_insert_newline_before_char() {
     );
     assert_eq!(worksheet.steps[2].source, "ps -> ph ) )\n");
     let diags = worksheet.diagnostics();
-    println!("{:#?}", diags);
+    println!("{diags:#?}");
     assert_eq!(diags.len(), 3);
     assert_eq!(diags[0], mkdiag(6, 8, 6, 9, "Parsed statement too short"));
     assert_eq!(diags[1], mkdiag(5, 0, 7, 0, "No step formula found"));

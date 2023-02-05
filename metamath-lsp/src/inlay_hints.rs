@@ -148,17 +148,15 @@ impl<'a> InlayHintContext<'a> {
 
 /// Returns the smallest outline containing the given position,
 /// within the provided outline.
-pub(crate) fn find_smallest_outline_containing<'a>(
-    url: &'a Url,
+pub(crate) fn find_smallest_outline_containing(
     byte_idx: FilePos,
-    outline: OutlineNodeRef<'a>,
-    db: &'_ Database,
-) -> OutlineNodeRef<'a> {
+    outline: OutlineNodeRef,
+) -> OutlineNodeRef {
     let mut last_span = Span::NULL;
     for child_outline in outline.children_iter() {
         let span = child_outline.get_span(); // db.statement_span(child_outline.get_statement());
         if (span.start..span.end).contains(&byte_idx) || byte_idx <= last_span.end {
-            return find_smallest_outline_containing(url, byte_idx, child_outline, db);
+            return find_smallest_outline_containing(byte_idx, child_outline);
         }
         last_span = span;
     }
@@ -197,13 +195,12 @@ pub(crate) fn inlay_hints(
         let first_byte_idx = source.lsp_position_to_byte(range.start);
         let last_byte_idx = source.lsp_position_to_byte(range.end);
         let first_statement =
-            find_smallest_outline_containing(&url, first_byte_idx as FilePos, root_node, &db)
+            find_smallest_outline_containing(first_byte_idx as FilePos, root_node)
                 .get_statement()
                 .address();
-        let last_statement =
-            find_smallest_outline_containing(&url, last_byte_idx as FilePos, root_node, &db)
-                .get_statement()
-                .address();
+        let last_statement = find_smallest_outline_containing(last_byte_idx as FilePos, root_node)
+            .get_statement()
+            .address();
         let mut context = InlayHintContext::new(source, &db)?;
         if db.lt(&first_statement, &last_statement) {
             for statement in db

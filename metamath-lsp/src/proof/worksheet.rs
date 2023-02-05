@@ -5,6 +5,7 @@ use lsp_types::{
     TextDocumentContentChangeEvent,
 };
 use metamath_knife::diag::StmtParseError;
+use metamath_knife::formula::UnificationError;
 use metamath_knife::statement::{StatementAddress, TokenPtr};
 use metamath_knife::{Database, Formula, StatementRef};
 use regex::{Match, Regex};
@@ -35,6 +36,13 @@ impl From<StmtParseError> for Diag {
         Self::DatabaseDiagnostic(d)
     }
 }
+
+impl From<UnificationError> for Diag {
+    fn from(_: UnificationError) -> Self {
+        Self::UnificationFailed
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Span(Range<usize>);
 
@@ -96,11 +104,9 @@ impl Diag {
                 "Hypothesis formula does not match database".to_string()
             }
             Diag::ProofDoesNotMatch => "Proof formula does not match database".to_string(),
-            Diag::WrongHypCount { expected, actual } => format!(
-                "Wrong hypotheses count: expected {expected}, got {actual}",
-                expected = expected,
-                actual = actual
-            ),
+            Diag::WrongHypCount { expected, actual } => {
+                format!("Wrong hypotheses count: expected {expected}, got {actual}")
+            }
             Diag::UnificationFailed => "Unification failed".to_string(),
             Diag::UnificationFailedForHyp(_) => "Unification failed for hypothesis".to_string(),
         }
@@ -530,7 +536,7 @@ impl ProofWorksheet {
 
     pub(crate) fn step_label(&self, step_idx: StepIdx) -> TokenPtr<'_> {
         let step_info = &self.steps[step_idx];
-        (&step_info.step).label(&step_info.source).as_bytes()
+        step_info.step.label(&step_info.source).as_bytes()
     }
 
     pub(crate) fn hyp_name(&self, step_idx: StepIdx, hyp_idx: usize) -> &str {
