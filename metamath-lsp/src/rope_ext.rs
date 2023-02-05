@@ -49,7 +49,7 @@ where
 
     fn line(&self, line_idx: u32) -> Cow<str> {
         let start_byte_idx = self.line_to_offset(line_idx as usize);
-        let end_byte_idx = self.line_to_offset((line_idx + 1) as usize as usize);
+        let end_byte_idx = self.line_to_offset((line_idx + 1) as usize);
         self.cow_for_range(start_byte_idx..end_byte_idx)
     }
 

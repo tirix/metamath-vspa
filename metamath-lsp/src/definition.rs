@@ -32,6 +32,7 @@ pub(crate) fn find_statement<'a>(token: &'a [u8], db: &'a Database) -> Option<St
                     }]
                     .into_iter(),
                     &grammar.typecodes(),
+                    false,
                     nset,
                 ) {
                     db.statement(nset.atom_name(formula.get_by_path(&[])?))

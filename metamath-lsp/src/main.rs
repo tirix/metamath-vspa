@@ -96,7 +96,7 @@ impl From<()> for ServerError {
 fn positive_integer(val: String) -> Result<(), String> {
     u32::from_str(&val)
         .map(|_| ())
-        .map_err(|e| format!("{}", e))
+        .map_err(|e| format!("{e}"))
 }
 
 /// Extension trait for [`Mutex`](std::sync::Mutex)`<T>`.
