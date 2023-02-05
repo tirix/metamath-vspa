@@ -150,7 +150,7 @@ impl<'a> InlayHintContext<'a> {
 /// within the provided outline.
 pub(crate) fn find_smallest_outline_containing(
     byte_idx: FilePos,
-    outline: OutlineNodeRef
+    outline: OutlineNodeRef,
 ) -> OutlineNodeRef {
     let mut last_span = Span::NULL;
     for child_outline in outline.children_iter() {
@@ -198,10 +198,9 @@ pub(crate) fn inlay_hints(
             find_smallest_outline_containing(first_byte_idx as FilePos, root_node)
                 .get_statement()
                 .address();
-        let last_statement =
-            find_smallest_outline_containing(last_byte_idx as FilePos, root_node)
-                .get_statement()
-                .address();
+        let last_statement = find_smallest_outline_containing(last_byte_idx as FilePos, root_node)
+            .get_statement()
+            .address();
         let mut context = InlayHintContext::new(source, &db)?;
         if db.lt(&first_statement, &last_statement) {
             for statement in db

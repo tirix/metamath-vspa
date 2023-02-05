@@ -104,8 +104,9 @@ impl Diag {
                 "Hypothesis formula does not match database".to_string()
             }
             Diag::ProofDoesNotMatch => "Proof formula does not match database".to_string(),
-            Diag::WrongHypCount { expected, actual } => format!(
-                "Wrong hypotheses count: expected {expected}, got {actual}"),
+            Diag::WrongHypCount { expected, actual } => {
+                format!("Wrong hypotheses count: expected {expected}, got {actual}")
+            }
             Diag::UnificationFailed => "Unification failed".to_string(),
             Diag::UnificationFailedForHyp(_) => "Unification failed for hypothesis".to_string(),
         }
